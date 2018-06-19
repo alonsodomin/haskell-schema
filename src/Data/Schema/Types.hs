@@ -1,17 +1,18 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE RankNTypes                #-}
 
 module Data.Schema.Types where
 
-import Control.Applicative.Free
-import Control.Lens
-import Data.Text (Text)
-import qualified Data.Text as T
-import Data.Vector (Vector)
+import           Control.Applicative.Free
+import           Control.Lens
+import           Data.Text                (Text)
+import qualified Data.Text                as T
+import           Data.Vector              (Vector)
 
 data PropDef o a = PropDef
-  { propName :: Text
-  , propSchema :: Schema a
+  { propName     :: Text
+  , propSchema   :: Schema a
   , propAccessor :: Getter o a
   }
 
@@ -28,10 +29,10 @@ type Props o = Ap (PropDef o) o
 -- emptyProps :: forall a. Props' a ()
 -- emptyProps = Pure ()
 
-data Alt a = forall b. Alt
-  { altId :: Text
+data AltDef a = forall b. AltDef
+  { altId     :: Text
   , altSchema :: Schema b
-  , altPrism :: Prism' a b
+  , altPrism  :: Prism' a b
   }
 
 data Schema a where
@@ -41,7 +42,7 @@ data Schema a where
   NoSchema :: Schema ()
   ListSchema :: Schema a -> Schema (Vector a)
   RecordSchema :: Props o -> Schema o
-  UnionSchema :: [Alt a] -> Schema a
+  UnionSchema :: [AltDef a] -> Schema a
 
 -- voidGetter :: forall a. Getter a ()
 -- voidGetter = to (const ())

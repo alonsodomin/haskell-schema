@@ -1,21 +1,21 @@
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveFunctor     #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TypeOperators     #-}
 
 module Lib
     ( someFunc
     ) where
 
-import Control.Applicative.Free
-import Control.Lens
-import Data.Schema
-import Data.Text (Text)
-import qualified Data.Text as T
-import Data.Time.Clock
+import           Control.Applicative.Free
+import           Control.Lens
+import           Data.Schema
+import           Data.Text                (Text)
+import qualified Data.Text                as T
+import           Data.Time.Clock
 
 stringIso :: Iso' String Text
 stringIso = iso T.pack T.unpack
@@ -48,18 +48,16 @@ subordinateCountGetter :: Getter AdminRole Int
 subordinateCountGetter = to subordinateCount
 
 userNameProp = liftAp $ PropDef "name" StringSchema (to userName)
-userRoleAlt = Alt "user" (RecordSchema (UserRole' <$> userNameProp)) _UserRole
+userRoleAlt = AltDef "user" (RecordSchema (UserRole' <$> userNameProp)) _UserRole
 
 departmentProp = liftAp $ PropDef "department" StringSchema adminDept
 subordinateCountProp = liftAp $ PropDef "subordinateCount" IntSchema subordinateCountGetter
-adminRoleAlt = Alt "admin" (RecordSchema (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
+adminRoleAlt = AltDef "admin" (RecordSchema (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
 
-userSchema :: Schema Role
-userSchema = UnionSchema [userRoleAlt, adminRoleAlt]
+roleSchema :: Schema Role
+roleSchema = UnionSchema [userRoleAlt, adminRoleAlt]
 
-data Person1 = Person1 { aName :: String, aAge :: Int }
-
-data Person = Person { name :: String, birthDate :: UTCTime, roles :: [Role] }
+data Person = Person { name :: Text, birthDate :: UTCTime, roles :: [Role] }
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"

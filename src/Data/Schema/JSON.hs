@@ -1,25 +1,26 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE OverloadedStrings         #-}
 
 module Data.Schema.JSON
      ( serializer
      , deserializer
      ) where
 
-import Data.Aeson (parseJSON)
-import qualified Data.Aeson as Json
-import qualified Data.Aeson.Types as Json
-import Data.Schema.Types
-import Control.Applicative.Free
-import Control.Lens
-import Control.Monad.State (State)
-import qualified Control.Monad.State as ST
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as Map
-import Data.Text (Text)
+import           Control.Applicative.Free
+import           Control.Lens
+import           Control.Monad.State      (State)
+import qualified Control.Monad.State      as ST
+import           Data.Aeson               (parseJSON)
+import qualified Data.Aeson               as Json
+import qualified Data.Aeson.Types         as Json
+import           Data.HashMap.Strict      (HashMap)
+import qualified Data.HashMap.Strict      as Map
+import           Data.Maybe
+import           Data.Schema.Types
+import           Data.Text                (Text)
 
-serializer :: Serializer a Json.Value
+serializer :: Schema a -> (a -> Json.Value)
 serializer IntSchema = Json.Number . fromIntegral
 serializer BoolSchema = Json.Bool
 serializer StringSchema = Json.String
@@ -30,7 +31,12 @@ serializer (RecordSchema ps) = \value -> Json.Object $ ST.execState (runAp (step
             let el = view getter obj
             ST.modify $ Map.insert name (serializer schema $ el)
             return el
-serializer (UnionSchema alts) = undefined
+serializer (UnionSchema alts) = \value -> head . catMaybes $ fmap (decodeAlt value) alts
+  where objSingleAttr :: Text -> Json.Value -> Json.Value
+        objSingleAttr n v = Json.Object $ Map.insert n v Map.empty
+
+        decodeAlt :: o -> AltDef o -> Maybe Json.Value
+        decodeAlt obj (AltDef i schema pr) = (objSingleAttr i) <$> (serializer schema) <$> (obj ^? pr)
 
 deserializer :: Schema a -> (Json.Value -> Json.Parser a)
 deserializer IntSchema = parseJSON
@@ -45,4 +51,10 @@ deserializer (RecordSchema ps) = \json -> case json of
           step jsonObj (PropDef name schema _) =
             Json.explicitParseField (\v -> deserializer schema $ v) jsonObj name
   other -> fail $ "Expected JSON Object but got: " ++ (show other)
-deserializer (UnionSchema alts) = undefined
+deserializer (UnionSchema alts) = \json -> case json of
+  Json.Object obj -> head . catMaybes $ fmap lookupParser alts
+    where lookupParser :: AltDef a -> Maybe (Json.Parser a)
+          lookupParser (AltDef i schema pr) = do
+            altParser <- (deserializer schema) <$> Map.lookup i obj
+            return $ (view $ re pr) <$> altParser
+  other ->  fail $ "Expected JSON Object but got: " ++ (show other)
