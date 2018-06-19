@@ -1,5 +1,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE RankNTypes                #-}
 
 module Data.Schema.Types where
@@ -27,6 +28,14 @@ data AltDef a = forall b. AltDef
   , altSchema :: Schema b
   , altPrism  :: Prism' a b
   }
+
+data Primitive a where
+  IntPrimitive :: Primitive Int
+  BoolPrimitive :: Primitive Bool
+  StringPrimitive :: Primitive String
+
+class IsSerializable f b where
+  serialize :: f a -> (a -> b)
 
 alt :: Text -> Schema b -> Prism' a b -> AltDef a
 alt = AltDef

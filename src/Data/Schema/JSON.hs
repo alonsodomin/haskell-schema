@@ -1,5 +1,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE OverloadedStrings         #-}
 
 module Data.Schema.JSON
@@ -19,6 +20,9 @@ import qualified Data.HashMap.Strict      as Map
 import           Data.Maybe
 import           Data.Schema.Types
 import           Data.Text                (Text)
+
+instance IsSerializable Primitive Json.Value where
+  serialize IntPrimitive = Json.Number . fromIntegral
 
 serializer :: Schema a -> (a -> Json.Value)
 serializer IntSchema = Json.Number . fromIntegral
