@@ -16,6 +16,7 @@ import           Data.Schema
 import           Data.Text                (Text)
 import qualified Data.Text                as T
 import           Data.Time.Clock
+import           Data.Vector              (Vector)
 
 stringIso :: Iso' String Text
 stringIso = iso T.pack T.unpack
@@ -47,17 +48,25 @@ adminDept = to department
 subordinateCountGetter :: Getter AdminRole Int
 subordinateCountGetter = to subordinateCount
 
-userNameProp = liftAp $ PropDef "name" StringSchema (to userName)
-userRoleAlt = AltDef "user" (RecordSchema (UserRole' <$> userNameProp)) _UserRole
+userNameProp = prop "name" StringSchema (to userName)
+userRoleAlt = alt "user" (RecordSchema (UserRole' <$> userNameProp)) _UserRole
 
-departmentProp = liftAp $ PropDef "department" StringSchema adminDept
-subordinateCountProp = liftAp $ PropDef "subordinateCount" IntSchema subordinateCountGetter
-adminRoleAlt = AltDef "admin" (RecordSchema (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
+departmentProp = prop "department" StringSchema adminDept
+subordinateCountProp = prop "subordinateCount" IntSchema subordinateCountGetter
+adminRoleAlt = alt "admin" (RecordSchema (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
 
 roleSchema :: Schema Role
 roleSchema = UnionSchema [userRoleAlt, adminRoleAlt]
 
-data Person = Person { name :: Text, birthDate :: UTCTime, roles :: [Role] }
+data Person = Person { personName :: Text, birthDate :: Int, roles :: Vector Role }
+
+personSchema :: Schema Person
+personSchema = RecordSchema
+             ( Person
+             <$> prop "name" StringSchema (to personName)
+             <*> prop "birthDate" IntSchema (to birthDate)
+             <*> prop "roles" (ListSchema roleSchema) (to roles)
+             )
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"

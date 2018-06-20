@@ -16,24 +16,23 @@ data PropDef o a = PropDef
   , propAccessor :: Getter o a
   }
 
-type Props o = Ap (PropDef o) o
+type Prop o a = Ap (PropDef o) a
+type Props o = Prop o o
 
--- propDef :: Text -> Schema a -> Getter o a -> Props o
--- propDef name schema get = liftAp $ ((PropDef name schema get) :: PropDef o a)
-
--- required :: PropDef o a -> Props o
--- required = liftAp
-
---type Props a = Props' a a
+prop :: Text -> Schema a -> Getter o a -> Prop o a
+prop name schema getter = liftAp (PropDef name schema getter)
 
 -- emptyProps :: forall a. Props' a ()
 -- emptyProps = Pure ()
 
 data AltDef a = forall b. AltDef
-  { altId     :: Text
+  { altName   :: Text
   , altSchema :: Schema b
   , altPrism  :: Prism' a b
   }
+
+alt :: Text -> Schema b -> Prism' a b -> AltDef a
+alt = AltDef
 
 data Schema a where
   IntSchema :: Schema Int
@@ -41,7 +40,7 @@ data Schema a where
   StringSchema :: Schema Text
   NoSchema :: Schema ()
   ListSchema :: Schema a -> Schema (Vector a)
-  RecordSchema :: Props o -> Schema o
+  RecordSchema :: Props a -> Schema a
   UnionSchema :: [AltDef a] -> Schema a
 
 -- voidGetter :: forall a. Getter a ()
