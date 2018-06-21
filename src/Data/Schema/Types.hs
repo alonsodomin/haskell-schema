@@ -7,7 +7,6 @@ module Data.Schema.Types where
 import           Control.Applicative.Free
 import           Control.Lens
 import           Data.Text                (Text)
-import qualified Data.Text                as T
 import           Data.Vector              (Vector)
 import           Prelude                  hiding (const, seq)
 
@@ -23,9 +22,6 @@ type Props o = Prop o o
 prop :: Text -> Schema a -> Getter o a -> Prop o a
 prop name schema getter = liftAp (PropDef name schema getter)
 
--- emptyProps :: forall a. Props' a ()
--- emptyProps = Pure ()
-
 data AltDef a = forall b. AltDef
   { altName   :: Text
   , altSchema :: Schema b
@@ -39,7 +35,7 @@ data Schema a where
   IntSchema :: Schema Int
   BoolSchema :: Schema Bool
   StringSchema :: Schema Text
-  ListSchema :: Schema a -> Schema (Vector a)
+  SeqSchema :: Schema a -> Schema (Vector a)
   RecordSchema :: Props a -> Schema a
   UnionSchema :: [AltDef a] -> Schema a
 
@@ -50,7 +46,7 @@ record :: Props a -> Schema a
 record = RecordSchema
 
 seq :: Schema a -> Schema (Vector a)
-seq = ListSchema
+seq = SeqSchema
 
 union :: [AltDef a] -> Schema a
 union = UnionSchema

@@ -12,8 +12,8 @@ module Lib
     ) where
 
 import           Control.Lens
-import Data.Schema (Schema, Prop)
-import qualified Data.Schema as S
+import           Data.Schema     (Prop, Schema)
+import qualified Data.Schema     as S
 import           Data.Text       (Text)
 import qualified Data.Text       as T
 import           Data.Time.Clock
@@ -56,6 +56,7 @@ roleSchema = S.union
            ]
 
 data Person = Person { personName :: Text, birthDate :: Int, roles :: Vector Role }
+  deriving (Eq, Show)
 
 personSchema :: Schema Person
 personSchema = S.record

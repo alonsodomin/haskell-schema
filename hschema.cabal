@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c15459f2f5a2c7171840de3803f681760c7920f74dbcd524544362273e91b401
+-- hash: 3ba9bf5517832febcfec08bc1b48e48703044d367352a407fb3a1d0214c7cf71
 
 name:           hschema
 version:        0.1.0.0
@@ -30,12 +30,14 @@ library
       Data.Schema.JSON
       Data.Schema.Types
       Lib
+      Test.Schema.QuickCheck
   other-modules:
       Paths_hschema
   hs-source-dirs:
       src
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , base >=4.7 && <5
     , free
     , lens
@@ -56,7 +58,8 @@ test-suite hexomorph-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , base >=4.7 && <5
     , free
     , hschema

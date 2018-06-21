@@ -24,7 +24,7 @@ serializer :: Schema a -> (a -> Json.Value)
 serializer IntSchema = Json.Number . fromIntegral
 serializer BoolSchema = Json.Bool
 serializer StringSchema = Json.String
-serializer (ListSchema s) = \a -> Json.Array $ fmap (serializer s) a
+serializer (SeqSchema s) = \a -> Json.Array $ fmap (serializer s) a
 serializer (RecordSchema ps) = \value -> Json.Object $ ST.execState (runAp (step value) ps) Map.empty
   where step :: o -> PropDef o v -> State (HashMap Text Json.Value) v
         step obj (PropDef name schema getter) = do
@@ -42,7 +42,7 @@ deserializer :: Schema a -> (Json.Value -> Json.Parser a)
 deserializer IntSchema = parseJSON
 deserializer BoolSchema = parseJSON
 deserializer StringSchema = parseJSON
-deserializer (ListSchema s) = \json -> case json of
+deserializer (SeqSchema s) = \json -> case json of
   Json.Array v -> traverse (deserializer s) v
   other        -> fail $ "Expected a JSON array but got: " ++ (show other)
 deserializer (RecordSchema ps) = \json -> case json of

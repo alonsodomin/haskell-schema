@@ -26,6 +26,7 @@ dependencies:
 - natural-transformation
 - lens
 - free
+- QuickCheck
 - text
 - time
 - unordered-containers
