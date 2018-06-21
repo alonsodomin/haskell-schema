@@ -1,0 +1,22 @@
+language: generic
+
+sudo: required
+dist: trusty
+
+cache:
+  directories:
+  - "$HOME/.stack"
+  - "$HOME/.local/bin/"
+  - ".stack-work/"
+
+before_install:
+- scripts/travis_setup.sh
+
+install:
+# Install additional build tools
+#- if [[ ! -x ~/.local/bin/hakyll ]]; then travis_wait 30 stack install hakyll; fi
+# Install dependencies
+- travis_wait 30 stack --no-terminal --install-ghc test --only-dependencies
+
+script:
+- stack --no-terminal test --haddock --no-haddock-deps
