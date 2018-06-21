@@ -1,10 +1,10 @@
-name:                hexomorph
+name:                hschema
 version:             0.1.0.0
-github:              "githubuser/hexomorph"
+github:              "alonsodomin/haskell-schema"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2018 Author name here"
+author:              "Antonio Alonso Dominguez"
+maintainer:          "alonso.domin@gmail.com"
+copyright:           "2018 Antonio Alonso Dominguez"
 
 extra-source-files:
 - README.md
@@ -43,4 +43,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - hexomorph
+    - hschema
