@@ -12,12 +12,12 @@ module Lib
     ) where
 
 import           Control.Lens
-import           Data.Schema
+import Data.Schema (Schema, Prop)
+import qualified Data.Schema as S
 import           Data.Text       (Text)
 import qualified Data.Text       as T
 import           Data.Time.Clock
 import           Data.Vector     (Vector)
-import           Prelude         hiding (const, seq)
 
 stringIso :: Iso' String Text
 stringIso = iso T.pack T.unpack
@@ -44,23 +44,23 @@ _AdminRole = prism' AdminRole $ \case
     _           -> Nothing
 
 departmentProp :: Prop AdminRole Text
-departmentProp = prop "department" StringSchema (to department)
+departmentProp = S.prop "department" S.StringSchema (to department)
 
 subordinateCountProp :: Prop AdminRole Int
-subordinateCountProp = prop "subordinateCount" IntSchema (to subordinateCount)
+subordinateCountProp = S.prop "subordinateCount" S.IntSchema (to subordinateCount)
 
 roleSchema :: Schema Role
-roleSchema = union
-           [ alt "user" (const UserRole') _UserRole
-           , alt "admin" (record (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
+roleSchema = S.union
+           [ S.alt "user" (S.const UserRole') _UserRole
+           , S.alt "admin" (S.record (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
            ]
 
 data Person = Person { personName :: Text, birthDate :: Int, roles :: Vector Role }
 
 personSchema :: Schema Person
-personSchema = record
+personSchema = S.record
              ( Person
-             <$> prop "name" StringSchema (to personName)
-             <*> prop "birthDate" IntSchema (to birthDate)
-             <*> prop "roles" (seq roleSchema) (to roles)
+             <$> S.prop "name" S.StringSchema (to personName)
+             <*> S.prop "birthDate" S.IntSchema (to birthDate)
+             <*> S.prop "roles" (S.seq roleSchema) (to roles)
              )
