@@ -52,7 +52,7 @@ subordinateCountProp = prop "subordinateCount" IntSchema (to subordinateCount)
 roleSchema :: Schema Role
 roleSchema = union
            [ alt "user" (const UserRole') _UserRole
-           , alt "admin" (RecordSchema (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
+           , alt "admin" (record (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
            ]
 
 data Person = Person { personName :: Text, birthDate :: Int, roles :: Vector Role }

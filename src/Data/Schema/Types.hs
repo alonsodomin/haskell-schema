@@ -9,6 +9,7 @@ import           Control.Lens
 import           Data.Text                (Text)
 import qualified Data.Text                as T
 import           Data.Vector              (Vector)
+import           Prelude                  hiding (const, seq)
 
 data PropDef o a = PropDef
   { propName     :: Text
