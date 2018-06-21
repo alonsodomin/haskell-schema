@@ -38,22 +38,21 @@ data Schema a where
   IntSchema :: Schema Int
   BoolSchema :: Schema Bool
   StringSchema :: Schema Text
-  NoSchema :: Schema ()
   ListSchema :: Schema a -> Schema (Vector a)
   RecordSchema :: Props a -> Schema a
   UnionSchema :: [AltDef a] -> Schema a
 
--- voidGetter :: forall a. Getter a ()
--- voidGetter = to (const ())
+const :: a -> Schema a
+const a = RecordSchema $ Pure a
 
--- emptyRecord :: forall a. Schema a
--- emptyRecord =
---   let voidPropDef :: PropDef a ()
---       voidPropDef = PropDef T.empty NoSchema voidGetter
+record :: Props a -> Schema a
+record = RecordSchema
 
---       lifted :: Props a
---       lifted = liftAp voidPropDef
---   in RecordSchema lifted
+seq :: Schema a -> Schema (Vector a)
+seq = ListSchema
+
+union :: [AltDef a] -> Schema a
+union = UnionSchema
 
 type Serializer a b   = Schema a -> (a -> b)
 type Deserializer a b = Schema b -> (a -> Either String b)

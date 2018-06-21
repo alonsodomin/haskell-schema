@@ -7,16 +7,17 @@
 {-# LANGUAGE TypeOperators     #-}
 
 module Lib
-    ( someFunc
+    ( personSchema
+    , roleSchema
     ) where
 
-import           Control.Applicative.Free
 import           Control.Lens
 import           Data.Schema
-import           Data.Text                (Text)
-import qualified Data.Text                as T
+import           Data.Text       (Text)
+import qualified Data.Text       as T
 import           Data.Time.Clock
-import           Data.Vector              (Vector)
+import           Data.Vector     (Vector)
+import           Prelude         hiding (const, seq)
 
 stringIso :: Iso' String Text
 stringIso = iso T.pack T.unpack
@@ -26,7 +27,7 @@ data Role =
   | AdminRole AdminRole
   deriving (Eq, Show)
 
-data UserRole = UserRole' { userName :: Text }
+data UserRole = UserRole'
   deriving (Eq, Show)
 
 data AdminRole = AdminRole' { department :: Text, subordinateCount :: Int }
@@ -42,31 +43,24 @@ _AdminRole = prism' AdminRole $ \case
     AdminRole x -> Just x
     _           -> Nothing
 
-adminDept :: Getter AdminRole Text
-adminDept = to department
+departmentProp :: Prop AdminRole Text
+departmentProp = prop "department" StringSchema (to department)
 
-subordinateCountGetter :: Getter AdminRole Int
-subordinateCountGetter = to subordinateCount
-
-userNameProp = prop "name" StringSchema (to userName)
-userRoleAlt = alt "user" (RecordSchema (UserRole' <$> userNameProp)) _UserRole
-
-departmentProp = prop "department" StringSchema adminDept
-subordinateCountProp = prop "subordinateCount" IntSchema subordinateCountGetter
-adminRoleAlt = alt "admin" (RecordSchema (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
+subordinateCountProp :: Prop AdminRole Int
+subordinateCountProp = prop "subordinateCount" IntSchema (to subordinateCount)
 
 roleSchema :: Schema Role
-roleSchema = UnionSchema [userRoleAlt, adminRoleAlt]
+roleSchema = union
+           [ alt "user" (const UserRole') _UserRole
+           , alt "admin" (RecordSchema (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
+           ]
 
 data Person = Person { personName :: Text, birthDate :: Int, roles :: Vector Role }
 
 personSchema :: Schema Person
-personSchema = RecordSchema
+personSchema = record
              ( Person
              <$> prop "name" StringSchema (to personName)
              <*> prop "birthDate" IntSchema (to birthDate)
-             <*> prop "roles" (ListSchema roleSchema) (to roles)
+             <*> prop "roles" (seq roleSchema) (to roles)
              )
-
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
