@@ -9,8 +9,6 @@ import           Control.Lens
 import           Data.Text                (Text)
 import           Data.Vector              (Vector)
 import           Prelude                  hiding (const, seq)
-import Data.Time.Clock
-import Data.Time.Clock.POSIX
 
 data PropDef o a = PropDef
   { propName     :: Text
@@ -20,9 +18,6 @@ data PropDef o a = PropDef
 
 type Prop o a = Ap (PropDef o) a
 type Props o = Prop o o
-
-utcTimeIso :: Iso' UTCTime Rational
-utcTimeIso = iso (toRational . utcTimeToPOSIXSeconds) (posixSecondsToUTCTime . fromRational)
 
 prop :: Text -> Schema a -> Getter o a -> Prop o a
 prop name schema getter = liftAp (PropDef name schema getter)

@@ -15,12 +15,7 @@ import           Control.Lens
 import           Data.Schema     (Prop, Schema)
 import qualified Data.Schema     as S
 import           Data.Text       (Text)
-import qualified Data.Text       as T
-import           Data.Time.Clock
 import           Data.Vector     (Vector)
-
-stringIso :: Iso' String Text
-stringIso = iso T.pack T.unpack
 
 data Role =
     UserRole UserRole
