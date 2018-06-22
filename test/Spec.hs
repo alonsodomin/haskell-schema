@@ -1,2 +1,4 @@
+import           Test.Schema.JSON
+
 main :: IO ()
-main = putStrLn "Test suite not yet implemented"
+main = verifyJsonSchema

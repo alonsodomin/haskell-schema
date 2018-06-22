@@ -4,10 +4,14 @@
 module Test.Schema.Model where
 
 import           Control.Lens
-import           Data.Schema  (JsonProp, JsonSchema)
-import qualified Data.Schema  as S
-import           Data.Text    (Text)
-import           Data.Vector  (Vector)
+import           Data.Aeson
+import           Data.Schema            (JsonProp, JsonSchema)
+import qualified Data.Schema            as S
+import           Data.Schema.JSON
+import           Data.Text              (Text)
+import           Data.Vector            (Vector)
+import           Test.QuickCheck
+import           Test.Schema.QuickCheck
 
 data Role =
     UserRole UserRole
@@ -52,3 +56,12 @@ personSchema = S.record
              <*> S.prim "birthDate" S.JsonInt (to birthDate)
              <*> S.prop "roles" (S.seq roleSchema) (to roles)
              )
+
+instance ToJSON Person where
+  toJSON = toJsonSerializer personSchema
+
+instance FromJSON Person where
+  parseJSON = toJsonDeserializer personSchema
+
+instance Arbitrary Person where
+  arbitrary = toGen personSchema
