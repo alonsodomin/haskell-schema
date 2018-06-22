@@ -8,7 +8,7 @@ import           Control.Lens
 import           Control.Natural
 import           Data.Schema.Types
 import qualified Data.Vector              as Vector
-import           Test.QuickCheck.Gen
+import           Test.QuickCheck
 
 class ToGen a where
   toGen :: a ~> Gen
@@ -22,4 +22,3 @@ instance ToGen p => ToGen (Schema p) where
   toGen (UnionSchema alts) = oneof $ fmap genAlt alts
     where genAlt :: ToGen p => AltDef p a -> Gen a
           genAlt (AltDef _ sch pr) = (view $ re pr) <$> toGen sch
-

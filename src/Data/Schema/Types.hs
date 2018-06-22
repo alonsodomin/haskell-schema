@@ -50,6 +50,9 @@ data Schema p a where
 --   fmap f (RecordSchema props) = RecordSchema (fmap f props)
 --   fmap f (UnionSchema alts) = UnionSchema (fmap f alts)
 
+class HasSchema p a where
+  getSchema :: Schema p a
+
 const :: a -> Schema p a
 const a = RecordSchema $ Pure a
 
