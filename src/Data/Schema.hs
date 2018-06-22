@@ -4,7 +4,7 @@ module Data.Schema
      , Props
      , prop
      , alt
-     , Schema (IntSchema, StringSchema, BoolSchema)
+     , Schema
      , const
      , record
      , seq

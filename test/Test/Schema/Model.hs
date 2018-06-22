@@ -1,15 +1,7 @@
-{-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE TypeOperators     #-}
 
-module Lib
-    ( personSchema
-    , roleSchema
-    ) where
+module Test.Schema.Model where
 
 import           Control.Lens
 import           Data.Schema  (JsonProp, JsonSchema)
