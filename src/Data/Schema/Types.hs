@@ -11,54 +11,53 @@ import           Data.Text                (Text)
 import           Data.Vector              (Vector)
 import           Prelude                  hiding (const, seq)
 
-data PropDef o a = PropDef
+data PropDef p o a = PropDef
   { propName     :: Text
-  , propSchema   :: Schema a
+  , propSchema   :: Schema p a
   , propAccessor :: Getter o a
   }
 
-type Prop o a = Ap (PropDef o) a
-type Props o = Prop o o
+type Prop p o a = Ap (PropDef p o) a
+type Props p o = Prop p o o
 
-prop :: Text -> Schema a -> Getter o a -> Prop o a
+prop :: Text -> Schema p a -> Getter o a -> Prop p o a
 prop name schema getter = liftAp (PropDef name schema getter)
 
-data AltDef a = forall b. AltDef
+data AltDef p a = forall b. AltDef
   { altName   :: Text
-  , altSchema :: Schema b
+  , altSchema :: Schema p b
   , altPrism  :: Prism' a b
   }
 
-data Primitive a where
-  IntPrimitive :: Primitive Int
-  BoolPrimitive :: Primitive Bool
-  StringPrimitive :: Primitive String
+-- instance Functor p => Functor (AltDef p) where
+--   fmap f (AltDef _ schema)
 
-class IsSerializable f b where
-  serialize :: f a -> (a -> b)
-
-alt :: Text -> Schema b -> Prism' a b -> AltDef a
+alt :: Text -> Schema p b -> Prism' a b -> AltDef p a
 alt = AltDef
 
-data Schema a where
-  IntSchema :: Schema Int
-  BoolSchema :: Schema Bool
-  StringSchema :: Schema Text
-  SeqSchema :: Schema a -> Schema (Vector a)
-  RecordSchema :: Props a -> Schema a
-  UnionSchema :: [AltDef a] -> Schema a
+data Schema p a where
+  -- IntSchema :: Schema Int
+  -- BoolSchema :: Schema Bool
+  -- StringSchema :: Schema Text
+  PrimitiveSchema :: p a -> Schema p a
+  SeqSchema :: Schema p a -> Schema p (Vector a)
+  RecordSchema :: Props p a -> Schema p a
+  UnionSchema :: [AltDef p a] -> Schema p a
 
-const :: a -> Schema a
+-- instance Functor p => Functor (Schema p) where
+--   fmap f (PrimitiveSchema p) = PrimitiveSchema (fmap f p)
+--   fmap f (SeqSchema elemSchema) = SeqSchema (fmap f elemSchema)
+--   fmap f (RecordSchema props) = RecordSchema (fmap f props)
+--   fmap f (UnionSchema alts) = UnionSchema (fmap f alts)
+
+const :: a -> Schema p a
 const a = RecordSchema $ Pure a
 
-record :: Props a -> Schema a
+record :: Props p a -> Schema p a
 record = RecordSchema
 
-seq :: Schema a -> Schema (Vector a)
+seq :: Schema p a -> Schema p (Vector a)
 seq = SeqSchema
 
-union :: [AltDef a] -> Schema a
+union :: [AltDef p a] -> Schema p a
 union = UnionSchema
-
-type Serializer a b   = Schema a -> (a -> b)
-type Deserializer a b = Schema b -> (a -> Either String b)

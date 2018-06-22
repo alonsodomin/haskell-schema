@@ -1,22 +1,25 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs         #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Test.Schema.QuickCheck where
 
 import           Control.Applicative.Free
 import           Control.Lens
+import           Control.Natural
 import           Data.Schema.Types
-import qualified Data.Text                as T
 import qualified Data.Vector              as Vector
 import           Test.QuickCheck.Gen
 
-generator :: Schema a -> Gen a
-generator IntSchema = chooseAny
-generator BoolSchema = chooseAny
-generator StringSchema = T.pack <$> (listOf chooseAny)
-generator (SeqSchema elemSchema) = Vector.fromList <$> listOf (generator elemSchema)
-generator (RecordSchema props) = runAp genProp props
-  where genProp :: PropDef o v -> Gen v
-        genProp (PropDef _ sch _) = generator sch
-generator (UnionSchema alts) = oneof $ fmap genAlt alts
-  where genAlt :: AltDef a -> Gen a
-        genAlt (AltDef _ sch pr) = (view $ re pr) <$> generator sch
+class ToGen a where
+  toGen :: a ~> Gen
+
+instance ToGen p => ToGen (Schema p) where
+  toGen (PrimitiveSchema p) = toGen p
+  toGen (SeqSchema elemSchema) = Vector.fromList <$> listOf (toGen elemSchema)
+  toGen (RecordSchema props) = runAp genProp props
+    where genProp :: ToGen p => PropDef p o v -> Gen v
+          genProp (PropDef _ sch _) = toGen sch
+  toGen (UnionSchema alts) = oneof $ fmap genAlt alts
+    where genAlt :: ToGen p => AltDef p a -> Gen a
+          genAlt (AltDef _ sch pr) = (view $ re pr) <$> toGen sch
+
