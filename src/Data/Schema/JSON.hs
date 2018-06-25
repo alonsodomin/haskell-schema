@@ -24,6 +24,7 @@ import           Control.Natural
 import           Data.Aeson               (parseJSON)
 import qualified Data.Aeson               as Json
 import qualified Data.Aeson.Types         as Json
+import           Data.Functor.Sum
 import           Data.HashMap.Strict      (HashMap)
 import qualified Data.HashMap.Strict      as Map
 import           Data.Maybe
@@ -49,16 +50,20 @@ data JsonPrimitive a where
   JsonInt :: JsonPrimitive Int
   JsonString :: JsonPrimitive Text
 
+prim :: Text -> JsonPrimitive a -> Getter o a -> JsonProp o a
+prim name primSchema getter = prop name (PrimitiveSchema primSchema) getter
+
 instance ToJsonSerializer JsonPrimitive where
   toJsonSerializer JsonInt    = Json.Number . fromIntegral
   toJsonSerializer JsonString = Json.String
 
+instance (ToJsonSerializer p, ToJsonSerializer q) => ToJsonSerializer (Sum p q) where
+  toJsonSerializer (InL l) = toJsonSerializer l
+  toJsonSerializer (InR r) = toJsonSerializer r
+
 instance ToGen JsonPrimitive where
   toGen JsonInt    = QC.chooseAny
   toGen JsonString = T.pack <$> (QC.listOf QC.chooseAny)
-
-prim :: Text -> JsonPrimitive a -> Getter o a -> JsonProp o a
-prim name primSchema getter = prop name (PrimitiveSchema primSchema) getter
 
 instance ToJsonSerializer p => ToJsonSerializer (Schema p) where
   toJsonSerializer (PrimitiveSchema p) = toJsonSerializer p

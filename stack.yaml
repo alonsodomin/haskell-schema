@@ -38,10 +38,11 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
-extra-deps: []
+extra-deps:
 # - category-extras-1.0.2
 # - categories-1.0.7
 # - comonad-extras-4.0
+# - comonad-4.2
 # - comonad-transformers-4.0
 # - comonads-fd-4.0
 # - groupoids-4.0

@@ -6,12 +6,17 @@ module Test.Schema.QuickCheck where
 import           Control.Applicative.Free
 import           Control.Lens
 import           Control.Natural
+import           Data.Functor.Sum
 import           Data.Schema.Types
 import qualified Data.Vector              as Vector
 import           Test.QuickCheck
 
 class ToGen a where
   toGen :: a ~> Gen
+
+instance (ToGen p, ToGen q) => ToGen (Sum p q) where
+  toGen (InL l) = toGen l
+  toGen (InR r) = toGen r
 
 instance ToGen p => ToGen (Schema p) where
   toGen (PrimitiveSchema p) = toGen p
