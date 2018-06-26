@@ -68,45 +68,47 @@ instance ToGen JsonPrimitive where
   toGen JsonString = T.pack <$> (QC.listOf QC.chooseAny)
 
 instance ToJsonSerializer p => ToJsonSerializer (Schema p) where
-  toJsonSerializer (HFix (PrimitiveSchema p)) = toJsonSerializer p
+  toJsonSerializer root = case (unfix root) of
+    PrimitiveSchema p -> toJsonSerializer p
 
-  toJsonSerializer (HFix (SeqSchema elemSchema)) = \a -> Json.Array $ fmap (toJsonSerializer elemSchema) a
+    SeqSchema elemSchema -> \a -> Json.Array $ fmap (toJsonSerializer elemSchema) a
 
-  toJsonSerializer (HFix (RecordSchema props)) = \obj -> Json.Object $ ST.execState (runAp (encodePropOf obj) props) Map.empty
-    where encodePropOf :: ToJsonSerializer p => o -> PropDef p o v -> State (HashMap Text Json.Value) v
-          encodePropOf o (PropDef name schema getter) = do
-            let el = view getter o
-            ST.modify $ Map.insert name (toJsonSerializer schema $ el)
-            return el
+    RecordSchema props -> \obj -> Json.Object $ ST.execState (runAp (encodePropOf obj) props) Map.empty
+      where encodePropOf :: ToJsonSerializer p => o -> PropDef p o v -> State (HashMap Text Json.Value) v
+            encodePropOf o (PropDef name schema getter) = do
+              let el = view getter o
+              ST.modify $ Map.insert name (toJsonSerializer schema $ el)
+              return el
 
-  toJsonSerializer (HFix (UnionSchema alts)) = \value -> head . catMaybes $ fmap (encodeAlt value) alts
-    where objSingleAttr :: Text -> Json.Value -> Json.Value
-          objSingleAttr n v = Json.Object $ Map.insert n v Map.empty
+    UnionSchema alts -> \value -> head . catMaybes $ fmap (encodeAlt value) alts
+      where objSingleAttr :: Text -> Json.Value -> Json.Value
+            objSingleAttr n v = Json.Object $ Map.insert n v Map.empty
 
-          encodeAlt :: ToJsonSerializer p => o -> AltDef p o -> Maybe Json.Value
-          encodeAlt o (AltDef i schema pr) = (objSingleAttr i) <$> (toJsonSerializer schema) <$> (o ^? pr)
+            encodeAlt :: ToJsonSerializer p => o -> AltDef p o -> Maybe Json.Value
+            encodeAlt o (AltDef i schema pr) = (objSingleAttr i) <$> (toJsonSerializer schema) <$> (o ^? pr)
 
 instance ToJsonDeserializer JsonPrimitive where
   toJsonDeserializer JsonInt    = parseJSON
   toJsonDeserializer JsonString = parseJSON
 
 instance ToJsonDeserializer p => ToJsonDeserializer (Schema p) where
-  toJsonDeserializer (HFix (PrimitiveSchema p)) = toJsonDeserializer p
+  toJsonDeserializer root = case (unfix root) of
+    PrimitiveSchema p -> toJsonDeserializer p
 
-  toJsonDeserializer (HFix (SeqSchema elemSchema)) = \json -> case json of
-    Json.Array v -> traverse (toJsonDeserializer elemSchema) v
-    other        -> fail $ "Expected a JSON array but got: " ++ (show other)
+    SeqSchema elemSchema -> \json -> case json of
+      Json.Array v -> traverse (toJsonDeserializer elemSchema) v
+      other        -> fail $ "Expected a JSON array but got: " ++ (show other)
 
-  toJsonDeserializer (HFix (RecordSchema props)) = \json -> case json of
-    Json.Object obj -> runAp (decodePropFrom obj) props
-      where decodePropFrom :: ToJsonDeserializer p => HashMap Text Json.Value -> PropDef p o v -> Json.Parser v
-            decodePropFrom jsonObj (PropDef name schema _) = Json.explicitParseField (toJsonDeserializer schema) jsonObj name
-    other -> fail $ "Expected JSON Object but got: " ++ (show other)
+    RecordSchema props -> \json -> case json of
+      Json.Object obj -> runAp (decodePropFrom obj) props
+        where decodePropFrom :: ToJsonDeserializer p => HashMap Text Json.Value -> PropDef p o v -> Json.Parser v
+              decodePropFrom jsonObj (PropDef name schema _) = Json.explicitParseField (toJsonDeserializer schema) jsonObj name
+      other -> fail $ "Expected JSON Object but got: " ++ (show other)
 
-  toJsonDeserializer (HFix (UnionSchema alts)) = \json -> case json of
-    Json.Object obj -> head . catMaybes $ fmap lookupParser alts
-      where lookupParser :: ToJsonDeserializer p => AltDef p a -> Maybe (Json.Parser a)
-            lookupParser (AltDef i schema pr) = do
-              altParser <- (toJsonDeserializer schema) <$> Map.lookup i obj
-              return $ (view $ re pr) <$> altParser
-    other ->  fail $ "Expected JSON Object but got: " ++ (show other)
+    UnionSchema alts -> \json -> case json of
+      Json.Object obj -> head . catMaybes $ fmap lookupParser alts
+        where lookupParser :: ToJsonDeserializer p => AltDef p a -> Maybe (Json.Parser a)
+              lookupParser (AltDef i schema pr) = do
+                altParser <- (toJsonDeserializer schema) <$> Map.lookup i obj
+                return $ (view $ re pr) <$> altParser
+      other ->  fail $ "Expected JSON Object but got: " ++ (show other)
