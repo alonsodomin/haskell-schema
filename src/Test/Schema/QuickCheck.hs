@@ -1,11 +1,14 @@
 {-# LANGUAGE GADTs         #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Test.Schema.QuickCheck where
 
 import           Control.Applicative.Free
 import           Control.Lens
 import           Control.Natural
+import Control.Functor.HigherOrder
 import           Data.Functor.Sum
 import           Data.Schema.Types
 import qualified Data.Vector              as Vector
@@ -19,11 +22,11 @@ instance (ToGen p, ToGen q) => ToGen (Sum p q) where
   toGen (InR r) = toGen r
 
 instance ToGen p => ToGen (Schema p) where
-  toGen (PrimitiveSchema p) = toGen p
-  toGen (SeqSchema elemSchema) = Vector.fromList <$> listOf (toGen elemSchema)
-  toGen (RecordSchema props) = runAp genProp props
+  toGen (HFix (PrimitiveSchema p)) = toGen p
+  toGen (HFix (SeqSchema elemSchema)) = Vector.fromList <$> listOf (toGen elemSchema)
+  toGen (HFix (RecordSchema props)) = runAp genProp props
     where genProp :: ToGen p => PropDef p o v -> Gen v
           genProp (PropDef _ sch _) = toGen sch
-  toGen (UnionSchema alts) = oneof $ fmap genAlt alts
+  toGen (HFix (UnionSchema alts)) = oneof $ fmap genAlt alts
     where genAlt :: ToGen p => AltDef p a -> Gen a
           genAlt (AltDef _ sch pr) = (view $ re pr) <$> toGen sch

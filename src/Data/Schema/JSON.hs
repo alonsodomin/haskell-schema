@@ -6,6 +6,7 @@
 {-# LANGUAGE RankNTypes                #-}
 {-# LANGUAGE TypeOperators             #-}
 {-# LANGUAGE UndecidableInstances      #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Data.Schema.JSON
      ( JsonProp
@@ -21,6 +22,7 @@ import           Control.Lens
 import           Control.Monad.State      (State)
 import qualified Control.Monad.State      as ST
 import           Control.Natural
+import Control.Functor.HigherOrder
 import           Data.Aeson               (parseJSON)
 import qualified Data.Aeson               as Json
 import qualified Data.Aeson.Types         as Json
@@ -33,9 +35,6 @@ import           Data.Text                (Text)
 import qualified Data.Text                as T
 import qualified Test.QuickCheck.Gen      as QC
 import           Test.Schema.QuickCheck
-
-type JsonProp o a = Prop JsonPrimitive o a
-type JsonSchema a = Schema JsonPrimitive a
 
 type JsonSerializer a = a -> Json.Value
 type JsonDeserializer a = Json.Value -> Json.Parser a
@@ -50,8 +49,11 @@ data JsonPrimitive a where
   JsonInt :: JsonPrimitive Int
   JsonString :: JsonPrimitive Text
 
+type JsonSchema a = Schema JsonPrimitive a
+type JsonProp o a = Prop (Schema JsonPrimitive) o a
+
 prim :: Text -> JsonPrimitive a -> Getter o a -> JsonProp o a
-prim name primSchema getter = prop name (PrimitiveSchema primSchema) getter
+prim name primSchema getter = prop name (HFix $ PrimitiveSchema primSchema) getter
 
 instance ToJsonSerializer JsonPrimitive where
   toJsonSerializer JsonInt    = Json.Number . fromIntegral
@@ -66,18 +68,18 @@ instance ToGen JsonPrimitive where
   toGen JsonString = T.pack <$> (QC.listOf QC.chooseAny)
 
 instance ToJsonSerializer p => ToJsonSerializer (Schema p) where
-  toJsonSerializer (PrimitiveSchema p) = toJsonSerializer p
+  toJsonSerializer (HFix (PrimitiveSchema p)) = toJsonSerializer p
 
-  toJsonSerializer (SeqSchema elemSchema) = \a -> Json.Array $ fmap (toJsonSerializer elemSchema) a
+  toJsonSerializer (HFix (SeqSchema elemSchema)) = \a -> Json.Array $ fmap (toJsonSerializer elemSchema) a
 
-  toJsonSerializer (RecordSchema props) = \obj -> Json.Object $ ST.execState (runAp (encodePropOf obj) props) Map.empty
+  toJsonSerializer (HFix (RecordSchema props)) = \obj -> Json.Object $ ST.execState (runAp (encodePropOf obj) props) Map.empty
     where encodePropOf :: ToJsonSerializer p => o -> PropDef p o v -> State (HashMap Text Json.Value) v
           encodePropOf o (PropDef name schema getter) = do
             let el = view getter o
             ST.modify $ Map.insert name (toJsonSerializer schema $ el)
             return el
 
-  toJsonSerializer (UnionSchema alts) = \value -> head . catMaybes $ fmap (encodeAlt value) alts
+  toJsonSerializer (HFix (UnionSchema alts)) = \value -> head . catMaybes $ fmap (encodeAlt value) alts
     where objSingleAttr :: Text -> Json.Value -> Json.Value
           objSingleAttr n v = Json.Object $ Map.insert n v Map.empty
 
@@ -89,19 +91,19 @@ instance ToJsonDeserializer JsonPrimitive where
   toJsonDeserializer JsonString = parseJSON
 
 instance ToJsonDeserializer p => ToJsonDeserializer (Schema p) where
-  toJsonDeserializer (PrimitiveSchema p) = toJsonDeserializer p
+  toJsonDeserializer (HFix (PrimitiveSchema p)) = toJsonDeserializer p
 
-  toJsonDeserializer (SeqSchema elemSchema) = \json -> case json of
+  toJsonDeserializer (HFix (SeqSchema elemSchema)) = \json -> case json of
     Json.Array v -> traverse (toJsonDeserializer elemSchema) v
     other        -> fail $ "Expected a JSON array but got: " ++ (show other)
 
-  toJsonDeserializer (RecordSchema props) = \json -> case json of
+  toJsonDeserializer (HFix (RecordSchema props)) = \json -> case json of
     Json.Object obj -> runAp (decodePropFrom obj) props
       where decodePropFrom :: ToJsonDeserializer p => HashMap Text Json.Value -> PropDef p o v -> Json.Parser v
             decodePropFrom jsonObj (PropDef name schema _) = Json.explicitParseField (toJsonDeserializer schema) jsonObj name
     other -> fail $ "Expected JSON Object but got: " ++ (show other)
 
-  toJsonDeserializer (UnionSchema alts) = \json -> case json of
+  toJsonDeserializer (HFix (UnionSchema alts)) = \json -> case json of
     Json.Object obj -> head . catMaybes $ fmap lookupParser alts
       where lookupParser :: ToJsonDeserializer p => AltDef p a -> Maybe (Json.Parser a)
             lookupParser (AltDef i schema pr) = do

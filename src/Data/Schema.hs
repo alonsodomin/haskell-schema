@@ -6,9 +6,9 @@ module Data.Schema
      , alt
      , Schema
      , const
-     , record
+     --, record
      , seq
-     , union
+     --, union
      ) where
 
 import           Data.Schema.JSON
