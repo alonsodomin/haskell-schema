@@ -1,16 +1,18 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE RankNTypes                #-}
 
 module Data.Schema.Types where
 
 import           Control.Applicative.Free
-import Control.Functor.HigherOrder
+import           Control.Functor.HigherOrder
 import           Control.Lens
-import           Data.Text                (Text)
-import           Data.Vector              (Vector)
-import           Prelude                  hiding (const, seq)
+import           Control.Natural
+import           Data.Text                   (Text)
+import           Data.Vector                 (Vector)
+import           Prelude                     hiding (const, seq)
 
 data PropDef s o a = PropDef
   { propName     :: Text
@@ -36,14 +38,18 @@ data AltDef s a = forall b. AltDef
 alt :: Text -> s b -> Prism' a b -> AltDef s a
 alt = AltDef
 
-data SchemaF p f a where
-  PrimitiveSchema :: p a -> SchemaF p f a
-  SeqSchema :: f a -> SchemaF p f (Vector a)
-  RecordSchema :: Props f a -> SchemaF p f a
-  UnionSchema :: [AltDef f a] -> SchemaF p f a
+data SchemaF p s a where
+  PrimitiveSchema :: p a -> SchemaF p s a
+  SeqSchema :: s a -> SchemaF p s (Vector a)
+  RecordSchema :: Props s a -> SchemaF p s a
+  UnionSchema :: [AltDef s a] -> SchemaF p s a
 
 type Schema p = HFix (SchemaF p)
-type AnnSchema p a = HCofree a (SchemaF p)
+--type AnnSchema p a = HCofree a (SchemaF p)
+
+-- instance Functor p => HFunctor (SchemaF p) where
+--   hfmap nt = wrapNT $ \case
+--     PrimitiveSchema p -> PrimitiveSchema (fmap (unwrapNT nt) p)
 
 const :: a -> Schema p a
 const a = HFix . RecordSchema $ Pure a

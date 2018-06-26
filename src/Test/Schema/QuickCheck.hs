@@ -1,17 +1,17 @@
-{-# LANGUAGE GADTs         #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
 
 module Test.Schema.QuickCheck where
 
 import           Control.Applicative.Free
+import           Control.Functor.HigherOrder
 import           Control.Lens
 import           Control.Natural
-import Control.Functor.HigherOrder
 import           Data.Functor.Sum
 import           Data.Schema.Types
-import qualified Data.Vector              as Vector
+import qualified Data.Vector                 as Vector
 import           Test.QuickCheck
 
 class ToGen a where

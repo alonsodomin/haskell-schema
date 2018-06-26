@@ -5,8 +5,8 @@
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE RankNTypes                #-}
 {-# LANGUAGE TypeOperators             #-}
+{-# LANGUAGE TypeSynonymInstances      #-}
 {-# LANGUAGE UndecidableInstances      #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 
 module Data.Schema.JSON
      ( JsonProp
@@ -18,22 +18,22 @@ module Data.Schema.JSON
      ) where
 
 import           Control.Applicative.Free
+import           Control.Functor.HigherOrder
 import           Control.Lens
-import           Control.Monad.State      (State)
-import qualified Control.Monad.State      as ST
+import           Control.Monad.State         (State)
+import qualified Control.Monad.State         as ST
 import           Control.Natural
-import Control.Functor.HigherOrder
-import           Data.Aeson               (parseJSON)
-import qualified Data.Aeson               as Json
-import qualified Data.Aeson.Types         as Json
+import           Data.Aeson                  (parseJSON)
+import qualified Data.Aeson                  as Json
+import qualified Data.Aeson.Types            as Json
 import           Data.Functor.Sum
-import           Data.HashMap.Strict      (HashMap)
-import qualified Data.HashMap.Strict      as Map
+import           Data.HashMap.Strict         (HashMap)
+import qualified Data.HashMap.Strict         as Map
 import           Data.Maybe
 import           Data.Schema.Types
-import           Data.Text                (Text)
-import qualified Data.Text                as T
-import qualified Test.QuickCheck.Gen      as QC
+import           Data.Text                   (Text)
+import qualified Data.Text                   as T
+import qualified Test.QuickCheck.Gen         as QC
 import           Test.Schema.QuickCheck
 
 type JsonSerializer a = a -> Json.Value
