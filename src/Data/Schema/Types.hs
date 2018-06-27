@@ -44,21 +44,20 @@ data SchemaF p s a where
   RecordSchema :: Props s a -> SchemaF p s a
   UnionSchema :: [AltDef s a] -> SchemaF p s a
 
-type Schema p = HFix (SchemaF p)
---type AnnSchema p a = HCofree a (SchemaF p)
+type Schema_ p = HFix (SchemaF p)
+type Schema ann p = HCofree (SchemaF p) ann
 
--- instance Functor p => HFunctor (SchemaF p) where
---   hfmap nt = wrapNT $ \case
---     PrimitiveSchema p -> PrimitiveSchema (fmap (unwrapNT nt) p)
+instance HFunctor (SchemaF p) where
+  hfmap nt = wrapNT $ \fa -> unwrapNT (hfmap nt) fa
 
-const :: a -> Schema p a
-const a = HFix . RecordSchema $ Pure a
+const :: ann -> a -> Schema ann p a
+const ann a = hcofree ann (RecordSchema $ Pure a)
 
--- record :: Props s a -> s a
--- record = HFix . RecordSchema
+record :: ann -> Props (Schema ann p) a -> Schema ann p a
+record ann ps = hcofree ann (RecordSchema ps)
 
-seq :: Schema p a -> Schema p (Vector a)
-seq = HFix . SeqSchema
+seq :: ann -> Schema ann p a -> Schema ann p (Vector a)
+seq ann elemSchema = hcofree ann (SeqSchema elemSchema)
 
--- union :: [AltDef p a] -> Schema p a
--- union = HFix . UnionSchema
+union :: ann -> [AltDef (Schema ann p) a] -> Schema ann p a
+union ann alts = hcofree ann (UnionSchema alts)

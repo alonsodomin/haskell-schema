@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE GADTs                #-}
+{-# LANGUAGE LambdaCase           #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
@@ -21,13 +22,14 @@ instance (ToGen p, ToGen q) => ToGen (Sum p q) where
   toGen (InL l) = toGen l
   toGen (InR r) = toGen r
 
-instance ToGen p => ToGen (Schema p) where
-  toGen root = case (unfix root) of
-    PrimitiveSchema p -> toGen p
-    SeqSchema elemSchema -> Vector.fromList <$> listOf (toGen elemSchema)
-    RecordSchema props -> runAp genProp props
-      where genProp :: ToGen p => PropDef p o v -> Gen v
-            genProp (PropDef _ sch _) = toGen sch
-    UnionSchema alts -> oneof $ fmap genAlt alts
-      where genAlt :: ToGen p => AltDef p a -> Gen a
-            genAlt (AltDef _ sch pr) = (view $ re pr) <$> toGen sch
+genAlg :: ToGen p => HAlgebra (SchemaF p) Gen
+genAlg = wrapNT $ \case
+  PrimitiveSchema p -> toGen p
+  SeqSchema elemSchema -> Vector.fromList <$> listOf elemSchema
+  RecordSchema fields -> runAp propSchema fields
+  UnionSchema alts -> oneof $ fmap genAlt alts
+    where genAlt :: AltDef Gen a -> Gen a
+          genAlt (AltDef _ genSingle pr) = (view $ re pr) <$> genSingle
+
+instance ToGen s => ToGen (Schema ann s) where
+  toGen schema = unwrapNT (hcata genAlg) (hforget schema)
