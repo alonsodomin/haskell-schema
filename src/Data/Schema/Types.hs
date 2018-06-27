@@ -48,7 +48,7 @@ type Schema_ p = HFix (SchemaF p)
 type Schema ann p = HCofree (SchemaF p) ann
 
 instance HFunctor (SchemaF p) where
-  hfmap nt = wrapNT $ \fa -> unwrapNT (hfmap nt) fa
+  hfmap nt = \fa -> (hfmap nt) fa
 
 const :: ann -> a -> Schema ann p a
 const ann a = hcofree ann (RecordSchema $ Pure a)

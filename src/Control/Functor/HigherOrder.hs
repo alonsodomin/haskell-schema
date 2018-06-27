@@ -11,7 +11,7 @@ import           Control.Natural
 type HAlgebra f g = f g :~> g
 
 class HFunctor (f :: ((* -> *) -> * -> *)) where
-  hfmap :: (m :~> n) -> f m :~> f n
+  hfmap :: (m ~> n) -> f m ~> f n
 
 class HFunctor f => HPointed f where
   hreturn :: Functor g => g a -> f g a
@@ -28,7 +28,7 @@ data HEnvT
   (i :: *) = HEnvT { hask :: !e, hlocal :: f g i }
 
 instance HFunctor f => HFunctor (HEnvT f a) where
-  hfmap nt = wrapNT $ \fm -> HEnvT (hask fm) (unwrapNT (hfmap nt) (hlocal fm))
+  hfmap nt = \fm -> HEnvT (hask fm) ((hfmap nt) (hlocal fm))
 
 type HCofree
   (f :: ((* -> *) -> * -> *))
@@ -44,11 +44,11 @@ hcofree a fhc = HFix (HEnvT a fhc)
 --         hf = wrapNT $ \gcf -> fmap f gcf
 --     in hcofree (f $ hask env) ((unwrapNT $ hfmap hf) fa)
 
-hcata :: HFunctor f => HAlgebra f g -> HFix f :~> g
-hcata alg = wrapNT $ \hf -> (unwrapNT alg) ((unwrapNT $ hfmap (hcata alg)) (unfix hf))
+hcata :: HFunctor f => HAlgebra f g -> HFix f ~> g
+hcata alg = \hf -> (unwrapNT alg) ((hfmap (hcata alg)) (unfix hf))
 
 hforgetAlg :: HAlgebra (HEnvT f a) (HFix f)
 hforgetAlg = wrapNT $ \env -> HFix $ hlocal env
 
 hforget :: HFunctor f => HCofree f a ~> HFix f
-hforget = unwrapNT $ hcata hforgetAlg
+hforget = hcata hforgetAlg

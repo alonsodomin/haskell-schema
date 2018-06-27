@@ -32,4 +32,4 @@ genAlg = wrapNT $ \case
           genAlt (AltDef _ genSingle pr) = (view $ re pr) <$> genSingle
 
 instance ToGen s => ToGen (Schema ann s) where
-  toGen schema = unwrapNT (hcata genAlg) (hforget schema)
+  toGen schema = (hcata genAlg) (hforget schema)
