@@ -44,8 +44,8 @@ data SchemaF p s a where
   RecordSchema :: Props s a -> SchemaF p s a
   UnionSchema :: [AltDef s a] -> SchemaF p s a
 
-type Schema_ p = HFix (SchemaF p)
 type Schema ann p = HCofree (SchemaF p) ann
+type Schema_ p = Schema () p
 
 instance HFunctor (SchemaF p) where
   hfmap nt = \fa -> (hfmap nt) fa
@@ -53,11 +53,23 @@ instance HFunctor (SchemaF p) where
 const :: ann -> a -> Schema ann p a
 const ann a = hcofree ann (RecordSchema $ Pure a)
 
+const_ :: a -> Schema_ p a
+const_ = const ()
+
 record :: ann -> Props (Schema ann p) a -> Schema ann p a
 record ann ps = hcofree ann (RecordSchema ps)
+
+record_ :: Props (Schema_ p) a -> Schema_ p a
+record_ = record ()
 
 seq :: ann -> Schema ann p a -> Schema ann p (Vector a)
 seq ann elemSchema = hcofree ann (SeqSchema elemSchema)
 
+seq_ :: Schema_ p a -> Schema_ p (Vector a)
+seq_ = seq ()
+
 union :: ann -> [AltDef (Schema ann p) a] -> Schema ann p a
 union ann alts = hcofree ann (UnionSchema alts)
+
+union_ :: [AltDef (Schema_ p) a] -> Schema_ p a
+union_ = union ()

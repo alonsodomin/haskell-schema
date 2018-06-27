@@ -44,11 +44,12 @@ hcofree a fhc = HFix (HEnvT a fhc)
 --         hf = wrapNT $ \gcf -> fmap f gcf
 --     in hcofree (f $ hask env) ((unwrapNT $ hfmap hf) fa)
 
-hcata :: HFunctor f => HAlgebra f g -> HFix f ~> g
-hcata alg = \hf -> (unwrapNT alg) ((hfmap (hcata alg)) (unfix hf))
+cataNT :: HFunctor f => HAlgebra f g -> HFix f ~> g
+cataNT alg = (unwrapNT alg) . nt -- $ (hfmap (hcata alg)) (unfix hf)
+  where nt hf = (hfmap (cataNT alg)) (unfix hf)
 
 hforgetAlg :: HAlgebra (HEnvT f a) (HFix f)
 hforgetAlg = wrapNT $ \env -> HFix $ hlocal env
 
 hforget :: HFunctor f => HCofree f a ~> HFix f
-hforget = hcata hforgetAlg
+hforget = cataNT hforgetAlg
