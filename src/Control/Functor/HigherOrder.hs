@@ -45,7 +45,7 @@ hcofree a fhc = HFix (HEnvT a fhc)
 --     in hcofree (f $ hask env) ((unwrapNT $ hfmap hf) fa)
 
 cataNT :: HFunctor f => HAlgebra f g -> HFix f ~> g
-cataNT alg = (unwrapNT alg) . nt -- $ (hfmap (hcata alg)) (unfix hf)
+cataNT alg = (unwrapNT alg) . nt
   where nt hf = (hfmap (cataNT alg)) (unfix hf)
 
 hforgetAlg :: HAlgebra (HEnvT f a) (HFix f)
