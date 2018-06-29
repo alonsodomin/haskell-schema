@@ -5,7 +5,7 @@ module Test.Schema.Model where
 
 import           Control.Lens
 import           Data.Aeson
-import           Data.Schema            (JsonProp, JsonSchema)
+import           Data.Schema            (JsonField, JsonSchema)
 import qualified Data.Schema            as S
 import           Data.Schema.JSON
 import           Data.Text              (Text)
@@ -34,10 +34,10 @@ _AdminRole = prism' AdminRole $ \case
     AdminRole x -> Just x
     _           -> Nothing
 
-departmentProp :: JsonProp_ AdminRole Text
+departmentProp :: JsonField_ AdminRole Text
 departmentProp = S.prim_ "department" S.JsonString (to department)
 
-subordinateCountProp :: JsonProp_ AdminRole Int
+subordinateCountProp :: JsonField_ AdminRole Int
 subordinateCountProp = S.prim_ "subordinateCount" S.JsonInt (to subordinateCount)
 
 roleSchema :: JsonSchema_ Role

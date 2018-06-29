@@ -9,8 +9,8 @@
 module Data.Schema.JSON
      ( JsonSerializer(..)
      , JsonDeserializer(..)
-     , JsonProp
-     , JsonProp_
+     , JsonField
+     , JsonField_
      , JsonSchema
      , JsonSchema_
      , JsonPrimitive(..)
@@ -55,13 +55,13 @@ data JsonPrimitive a where
 type JsonSchema ann a = Schema ann JsonPrimitive a
 type JsonSchema_ a = JsonSchema () a
 
-type JsonProp ann o a = Prop (Schema ann JsonPrimitive) o a
-type JsonProp_ o a = JsonProp () o a
+type JsonField ann o a = Field (Schema ann JsonPrimitive) o a
+type JsonField_ o a = JsonField () o a
 
-prim :: ann -> Text -> JsonPrimitive a -> Getter o a -> JsonProp ann o a
+prim :: ann -> Text -> JsonPrimitive a -> Getter o a -> JsonField ann o a
 prim ann name primSchema getter = prop name (hcofree ann $ PrimitiveSchema primSchema) getter
 
-prim_ :: Text -> JsonPrimitive a -> Getter o a -> JsonProp_ o a
+prim_ :: Text -> JsonPrimitive a -> Getter o a -> JsonField_ o a
 prim_ = prim ()
 
 instance ToJsonSerializer JsonPrimitive where
@@ -81,8 +81,8 @@ toJsonSerializerAlg = wrapNT $ \case
   PrimitiveSchema p -> toJsonSerializer p
   SeqSchema serializer -> JsonSerializer $ \vec -> Json.Array $ fmap (runJsonSerializer serializer) vec
   RecordSchema fields -> JsonSerializer $ \obj -> Json.Object $ ST.execState (runAp (encodePropOf obj) fields) Map.empty
-    where encodePropOf :: o -> PropDef o JsonSerializer v -> State (HashMap Text Json.Value) v
-          encodePropOf o (PropDef name (JsonSerializer serialize) getter) = do
+    where encodePropOf :: o -> FieldDef o JsonSerializer v -> State (HashMap Text Json.Value) v
+          encodePropOf o (FieldDef name (JsonSerializer serialize) getter) = do
             let el = view getter o
             ST.modify $ Map.insert name (serialize el)
             return el
@@ -110,8 +110,8 @@ toJsonDeserializerAlg = wrapNT $ \case
     other        -> fail $ "Expected a JSON array but got: " ++ (show other)
   RecordSchema fields -> JsonDeserializer $ \json -> case json of
     Json.Object obj -> runAp decodeField fields
-      where decodeField :: PropDef o JsonDeserializer v -> Json.Parser v
-            decodeField (PropDef name (JsonDeserializer deserial) _) = Json.explicitParseField deserial obj name
+      where decodeField :: FieldDef o JsonDeserializer v -> Json.Parser v
+            decodeField (FieldDef name (JsonDeserializer deserial) _) = Json.explicitParseField deserial obj name
     other -> fail $ "Expected JSON Object but got: " ++ (show other)
   UnionSchema alts -> JsonDeserializer $ \json -> case json of
     Json.Object obj -> head . catMaybes $ fmap lookupParser alts

@@ -1,7 +1,7 @@
 module Data.Schema
      ( module Data.Schema.JSON
-     , Prop
-     , Props
+     , Field
+     , Fields
      , prop
      , alt
      , Schema

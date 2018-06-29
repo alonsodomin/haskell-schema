@@ -13,20 +13,20 @@ import           Data.Text                   (Text)
 import           Data.Vector                 (Vector)
 import           Prelude                     hiding (const, seq)
 
-data PropDef o s a = PropDef
+data FieldDef o s a = FieldDef
   { propName     :: Text
   , propSchema   :: s a
   , propAccessor :: Getter o a
   }
 
-instance HFunctor (PropDef o) where
-  hfmap nt = \(PropDef name sch acc) -> PropDef name (nt sch) acc
+instance HFunctor (FieldDef o) where
+  hfmap nt = \(FieldDef name sch acc) -> FieldDef name (nt sch) acc
 
-type Prop s o a = Ap (PropDef o s) a
-type Props s o = Prop s o o
+type Field s o a = Ap (FieldDef o s) a
+type Fields s o = Field s o o
 
-prop :: Text -> s a -> Getter o a -> Prop s o a
-prop name schema getter = liftAp (PropDef name schema getter)
+prop :: Text -> s a -> Getter o a -> Field s o a
+prop name schema getter = liftAp (FieldDef name schema getter)
 
 data AltDef s a = forall b. AltDef
   { altName   :: Text
@@ -43,7 +43,7 @@ alt = AltDef
 data SchemaF p s a where
   PrimitiveSchema :: p a -> SchemaF p s a
   SeqSchema       :: s a -> SchemaF p s (Vector a)
-  RecordSchema    :: Props s a -> SchemaF p s a
+  RecordSchema    :: Fields s a -> SchemaF p s a
   UnionSchema     :: [AltDef s a] -> SchemaF p s a
 
 type Schema ann p = HCofree (SchemaF p) ann
@@ -62,10 +62,10 @@ const ann a = hcofree ann (RecordSchema $ Pure a)
 const_ :: a -> Schema_ p a
 const_ = const ()
 
-record :: ann -> Props (Schema ann p) a -> Schema ann p a
+record :: ann -> Fields (Schema ann p) a -> Schema ann p a
 record ann ps = hcofree ann (RecordSchema ps)
 
-record_ :: Props (Schema_ p) a -> Schema_ p a
+record_ :: Fields (Schema_ p) a -> Schema_ p a
 record_ = record ()
 
 seq :: ann -> Schema ann p a -> Schema ann p (Vector a)
