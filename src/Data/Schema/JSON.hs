@@ -81,7 +81,7 @@ toJsonSerializerAlg = wrapNT $ \case
   PrimitiveSchema p -> toJsonSerializer p
   SeqSchema serializer -> JsonSerializer $ \vec -> Json.Array $ fmap (runJsonSerializer serializer) vec
   RecordSchema fields -> JsonSerializer $ \obj -> Json.Object $ ST.execState (runAp (encodePropOf obj) fields) Map.empty
-    where encodePropOf :: o -> PropDef JsonSerializer o v -> State (HashMap Text Json.Value) v
+    where encodePropOf :: o -> PropDef o JsonSerializer v -> State (HashMap Text Json.Value) v
           encodePropOf o (PropDef name (JsonSerializer serialize) getter) = do
             let el = view getter o
             ST.modify $ Map.insert name (serialize el)
@@ -110,7 +110,7 @@ toJsonDeserializerAlg = wrapNT $ \case
     other        -> fail $ "Expected a JSON array but got: " ++ (show other)
   RecordSchema fields -> JsonDeserializer $ \json -> case json of
     Json.Object obj -> runAp decodeField fields
-      where decodeField :: PropDef JsonDeserializer o v -> Json.Parser v
+      where decodeField :: PropDef o JsonDeserializer v -> Json.Parser v
             decodeField (PropDef name (JsonDeserializer deserial) _) = Json.explicitParseField deserial obj name
     other -> fail $ "Expected JSON Object but got: " ++ (show other)
   UnionSchema alts -> JsonDeserializer $ \json -> case json of
