@@ -1,14 +1,18 @@
-{-# LANGUAGE GADTs         #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE LambdaCase           #-}
+{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Test.Schema.QuickCheck where
 
 import           Control.Applicative.Free
+import           Control.Functor.HigherOrder
 import           Control.Lens
 import           Control.Natural
 import           Data.Functor.Sum
 import           Data.Schema.Types
-import qualified Data.Vector              as Vector
+import qualified Data.Vector                 as Vector
 import           Test.QuickCheck
 
 class ToGen a where
@@ -18,12 +22,14 @@ instance (ToGen p, ToGen q) => ToGen (Sum p q) where
   toGen (InL l) = toGen l
   toGen (InR r) = toGen r
 
-instance ToGen p => ToGen (Schema p) where
-  toGen (PrimitiveSchema p) = toGen p
-  toGen (SeqSchema elemSchema) = Vector.fromList <$> listOf (toGen elemSchema)
-  toGen (RecordSchema props) = runAp genProp props
-    where genProp :: ToGen p => PropDef p o v -> Gen v
-          genProp (PropDef _ sch _) = toGen sch
-  toGen (UnionSchema alts) = oneof $ fmap genAlt alts
-    where genAlt :: ToGen p => AltDef p a -> Gen a
-          genAlt (AltDef _ sch pr) = (view $ re pr) <$> toGen sch
+genAlg :: ToGen p => HAlgebra (SchemaF p) Gen
+genAlg = wrapNT $ \case
+  PrimitiveSchema p -> toGen p
+  SeqSchema elemSchema -> Vector.fromList <$> listOf elemSchema
+  RecordSchema fields -> runAp propSchema fields
+  UnionSchema alts -> oneof $ fmap genAlt alts
+    where genAlt :: AltDef Gen a -> Gen a
+          genAlt (AltDef _ genSingle pr) = (view $ re pr) <$> genSingle
+
+instance ToGen s => ToGen (Schema ann s) where
+  toGen schema = (cataNT genAlg) (hforget schema)

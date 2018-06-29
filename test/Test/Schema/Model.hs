@@ -34,34 +34,34 @@ _AdminRole = prism' AdminRole $ \case
     AdminRole x -> Just x
     _           -> Nothing
 
-departmentProp :: JsonProp AdminRole Text
-departmentProp = S.prim "department" S.JsonString (to department)
+departmentProp :: JsonProp_ AdminRole Text
+departmentProp = S.prim_ "department" S.JsonString (to department)
 
-subordinateCountProp :: JsonProp AdminRole Int
-subordinateCountProp = S.prim "subordinateCount" S.JsonInt (to subordinateCount)
+subordinateCountProp :: JsonProp_ AdminRole Int
+subordinateCountProp = S.prim_ "subordinateCount" S.JsonInt (to subordinateCount)
 
-roleSchema :: JsonSchema Role
-roleSchema = S.union
-           [ S.alt "user" (S.const UserRole') _UserRole
-           , S.alt "admin" (S.record (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
+roleSchema :: JsonSchema_ Role
+roleSchema = S.union_
+           [ S.alt "user" (S.const_ UserRole') _UserRole
+           , S.alt "admin" (S.record_ (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
            ]
 
 data Person = Person { personName :: Text, birthDate :: Int, roles :: Vector Role }
   deriving (Eq, Show)
 
-personSchema :: JsonSchema Person
-personSchema = S.record
+personSchema :: JsonSchema_ Person
+personSchema = S.record_
              ( Person
-             <$> S.prim "name" S.JsonString (to personName)
-             <*> S.prim "birthDate" S.JsonInt (to birthDate)
-             <*> S.prop "roles" (S.seq roleSchema) (to roles)
+             <$> S.prim_ "name" S.JsonString (to personName)
+             <*> S.prim_ "birthDate" S.JsonInt (to birthDate)
+             <*> S.prop "roles" (S.seq_ roleSchema) (to roles)
              )
 
 instance ToJSON Person where
-  toJSON = toJsonSerializer personSchema
+  toJSON = runJsonSerializer . toJsonSerializer $ personSchema
 
 instance FromJSON Person where
-  parseJSON = toJsonDeserializer personSchema
+  parseJSON = runJsonDeserializer . toJsonDeserializer $ personSchema
 
 instance Arbitrary Person where
   arbitrary = toGen personSchema
