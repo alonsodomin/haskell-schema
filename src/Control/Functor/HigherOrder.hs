@@ -37,13 +37,6 @@ type HCofree
 hcofree :: a -> f (HCofree f a) b -> HCofree f a b
 hcofree a fhc = HFix (HEnvT a fhc)
 
--- instance HFunctor f => Functor (HCofree f a) where
---   fmap f fa =
---     let env = unfix fa
---         --hf :: HCofree f a :~> HCofree f b
---         hf = wrapNT $ \gcf -> fmap f gcf
---     in hcofree (f $ hask env) ((unwrapNT $ hfmap hf) fa)
-
 cataNT :: HFunctor f => HAlgebra f g -> HFix f ~> g
 cataNT alg = (unwrapNT alg) . nt
   where nt hf = (hfmap (cataNT alg)) (unfix hf)
