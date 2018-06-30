@@ -14,9 +14,9 @@ import           Data.Vector                 (Vector)
 import           Prelude                     hiding (const, seq)
 
 data FieldDef o s a = FieldDef
-  { propName     :: Text
-  , propSchema   :: s a
-  , propAccessor :: Getter o a
+  { fieldName     :: Text
+  , fieldSchema   :: s a
+  , fieldAccessor :: Getter o a
   }
 
 instance HFunctor (FieldDef o) where
@@ -50,7 +50,7 @@ type Schema ann p = HCofree (SchemaF p) ann
 type Schema_ p = Schema () p
 
 instance HFunctor (SchemaF p) where
-  hfmap nt = \fa -> case fa of
+  hfmap nt = \case
     PrimitiveSchema p   -> PrimitiveSchema p
     SeqSchema elemSch   -> SeqSchema $ nt elemSch
     RecordSchema fields -> RecordSchema $ hoistAp (hfmap nt) fields

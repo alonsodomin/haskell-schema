@@ -26,7 +26,7 @@ genAlg :: ToGen p => HAlgebra (SchemaF p) Gen
 genAlg = wrapNT $ \case
   PrimitiveSchema p -> toGen p
   SeqSchema elemSchema -> Vector.fromList <$> listOf elemSchema
-  RecordSchema fields -> runAp propSchema fields
+  RecordSchema fields -> runAp fieldSchema fields
   UnionSchema alts -> oneof $ fmap genAlt alts
     where genAlt :: AltDef Gen a -> Gen a
           genAlt (AltDef _ genSingle pr) = (view $ re pr) <$> genSingle
