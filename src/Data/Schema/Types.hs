@@ -8,7 +8,7 @@ module Data.Schema.Types where
 
 import           Control.Applicative.Free
 import           Control.Functor.HigherOrder
-import           Control.Lens
+import           Control.Lens                hiding (iso)
 import           Data.Text                   (Text)
 import           Data.Vector                 (Vector)
 import           Prelude                     hiding (const, seq)
@@ -45,9 +45,10 @@ data SchemaF p s a where
   SeqSchema       :: s a -> SchemaF p s (Vector a)
   RecordSchema    :: Fields s a -> SchemaF p s a
   UnionSchema     :: [AltDef s a] -> SchemaF p s a
+  IsoSchema       :: s a -> Iso' a b -> SchemaF p s b
 
 type Schema ann p = HCofree (SchemaF p) ann
-type Schema_ p = Schema () p
+type Schema' p = Schema () p
 
 instance HFunctor (SchemaF p) where
   hfmap nt = \case
@@ -55,27 +56,34 @@ instance HFunctor (SchemaF p) where
     SeqSchema elemSch   -> SeqSchema $ nt elemSch
     RecordSchema fields -> RecordSchema $ hoistAp (hfmap nt) fields
     UnionSchema alts    -> UnionSchema $ fmap (hfmap nt) alts
+    IsoSchema base i    -> IsoSchema (nt base) i
 
 const :: ann -> a -> Schema ann p a
 const ann a = hcofree ann (RecordSchema $ Pure a)
 
-const_ :: a -> Schema_ p a
-const_ = const ()
+const' :: a -> Schema' p a
+const' = const ()
 
 record :: ann -> Fields (Schema ann p) a -> Schema ann p a
 record ann ps = hcofree ann (RecordSchema ps)
 
-record_ :: Fields (Schema_ p) a -> Schema_ p a
-record_ = record ()
+record' :: Fields (Schema' p) a -> Schema' p a
+record' = record ()
 
 seq :: ann -> Schema ann p a -> Schema ann p (Vector a)
 seq ann elemSchema = hcofree ann (SeqSchema elemSchema)
 
-seq_ :: Schema_ p a -> Schema_ p (Vector a)
-seq_ = seq ()
+seq' :: Schema' p a -> Schema' p (Vector a)
+seq' = seq ()
 
 union :: ann -> [AltDef (Schema ann p) a] -> Schema ann p a
 union ann alts = hcofree ann (UnionSchema alts)
 
-union_ :: [AltDef (Schema_ p) a] -> Schema_ p a
-union_ = union ()
+union' :: [AltDef (Schema' p) a] -> Schema' p a
+union' = union ()
+
+iso :: ann -> Schema ann p a -> Iso' a b -> Schema ann p b
+iso ann base i = hcofree ann (IsoSchema base i)
+
+iso' :: Schema' p a -> Iso' a b -> Schema' p b
+iso' = iso ()

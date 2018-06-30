@@ -10,12 +10,12 @@ module Data.Schema.JSON
      ( JsonSerializer(..)
      , JsonDeserializer(..)
      , JsonField
-     , JsonField_
+     , JsonField'
      , JsonSchema
-     , JsonSchema_
+     , JsonSchema'
      , JsonPrimitive(..)
      , prim
-     , prim_
+     , prim'
      , ToJsonSerializer(..)
      , ToJsonDeserializer(..)
      ) where
@@ -53,16 +53,16 @@ data JsonPrimitive a where
   JsonString :: JsonPrimitive Text
 
 type JsonSchema ann a = Schema ann JsonPrimitive a
-type JsonSchema_ a = JsonSchema () a
+type JsonSchema' a = JsonSchema () a
 
 type JsonField ann o a = Field (Schema ann JsonPrimitive) o a
-type JsonField_ o a = JsonField () o a
+type JsonField' o a = JsonField () o a
 
 prim :: ann -> Text -> JsonPrimitive a -> Getter o a -> JsonField ann o a
 prim ann name primSchema getter = prop name (hcofree ann $ PrimitiveSchema primSchema) getter
 
-prim_ :: Text -> JsonPrimitive a -> Getter o a -> JsonField_ o a
-prim_ = prim ()
+prim' :: Text -> JsonPrimitive a -> Getter o a -> JsonField' o a
+prim' = prim ()
 
 instance ToJsonSerializer JsonPrimitive where
   toJsonSerializer JsonInt    = JsonSerializer $ Json.Number . fromIntegral
@@ -94,6 +94,7 @@ toJsonSerializerAlg = wrapNT $ \case
           encodeAlt o (AltDef name (JsonSerializer serialize) pr) = do
             json <- serialize <$> o ^? pr
             return $ objSingleAttr name json
+  IsoSchema (JsonSerializer base) iso -> JsonSerializer $ \value -> base (view (re iso) value)
 
 instance ToJsonSerializer p => ToJsonSerializer (Schema ann p) where
   toJsonSerializer schema = (cataNT toJsonSerializerAlg) (hforget schema)
@@ -120,6 +121,7 @@ toJsonDeserializerAlg = wrapNT $ \case
               altParser <- deserial <$> Map.lookup name obj
               return $ (view $ re pr) <$> altParser
     other ->  fail $ "Expected JSON Object but got: " ++ (show other)
+  IsoSchema (JsonDeserializer base) iso -> JsonDeserializer $ \json -> (view iso) <$> (base json)
 
 instance ToJsonDeserializer p => ToJsonDeserializer (Schema ann p) where
   toJsonDeserializer schema = (cataNT toJsonDeserializerAlg) (hforget schema)

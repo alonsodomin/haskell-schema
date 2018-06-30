@@ -5,14 +5,17 @@ module Data.Schema
      , prop
      , alt
      , Schema
+     , Schema'
      , const
-     , const_
+     , const'
      , record
-     , record_
+     , record'
      , seq
-     , seq_
+     , seq'
      , union
-     , union_
+     , union'
+     , iso
+     , iso'
      ) where
 
 import           Data.Schema.JSON

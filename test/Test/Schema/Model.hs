@@ -9,9 +9,13 @@ import           Data.Schema            (JsonField, JsonSchema)
 import qualified Data.Schema            as S
 import           Data.Schema.JSON
 import           Data.Text              (Text)
+import qualified Data.Text              as T
 import           Data.Vector            (Vector)
 import           Test.QuickCheck
 import           Test.Schema.QuickCheck
+
+stringIso :: Iso' Text String
+stringIso = iso T.unpack T.pack
 
 data Role =
     UserRole UserRole
@@ -34,27 +38,27 @@ _AdminRole = prism' AdminRole $ \case
     AdminRole x -> Just x
     _           -> Nothing
 
-departmentProp :: JsonField_ AdminRole Text
-departmentProp = S.prim_ "department" S.JsonString (to department)
+departmentProp :: JsonField' AdminRole Text
+departmentProp = S.prim' "department" S.JsonString (to department)
 
-subordinateCountProp :: JsonField_ AdminRole Int
-subordinateCountProp = S.prim_ "subordinateCount" S.JsonInt (to subordinateCount)
+subordinateCountProp :: JsonField' AdminRole Int
+subordinateCountProp = S.prim' "subordinateCount" S.JsonInt (to subordinateCount)
 
-roleSchema :: JsonSchema_ Role
-roleSchema = S.union_
-           [ S.alt "user" (S.const_ UserRole') _UserRole
-           , S.alt "admin" (S.record_ (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
+roleSchema :: JsonSchema' Role
+roleSchema = S.union'
+           [ S.alt "user" (S.const' UserRole') _UserRole
+           , S.alt "admin" (S.record' (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
            ]
 
 data Person = Person { personName :: Text, birthDate :: Int, roles :: Vector Role }
   deriving (Eq, Show)
 
-personSchema :: JsonSchema_ Person
-personSchema = S.record_
+personSchema :: JsonSchema' Person
+personSchema = S.record'
              ( Person
-             <$> S.prim_ "name" S.JsonString (to personName)
-             <*> S.prim_ "birthDate" S.JsonInt (to birthDate)
-             <*> S.prop "roles" (S.seq_ roleSchema) (to roles)
+             <$> S.prim' "name" S.JsonString (to personName)
+             <*> S.prim' "birthDate" S.JsonInt (to birthDate)
+             <*> S.prop "roles" (S.seq' roleSchema) (to roles)
              )
 
 instance ToJSON Person where
