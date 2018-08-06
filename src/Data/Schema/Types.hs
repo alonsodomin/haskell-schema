@@ -82,11 +82,11 @@ seq ann elemSchema = hcofree ann (SeqSchema elemSchema)
 seq' :: Schema' p a -> Schema' p (Vector a)
 seq' = seq ()
 
-union :: ann -> [AltDef (Schema ann p) a] -> Schema ann p a
-union ann alts = hcofree ann (UnionSchema alts)
+oneOf :: ann -> [AltDef (Schema ann p) a] -> Schema ann p a
+oneOf ann alts = hcofree ann (UnionSchema alts)
 
-union' :: [AltDef (Schema' p) a] -> Schema' p a
-union' = union ()
+oneOf' :: [AltDef (Schema' p) a] -> Schema' p a
+oneOf' = oneOf ()
 
 iso :: ann -> Schema ann p a -> Iso' a b -> Schema ann p b
 iso ann base i = hcofree ann (IsoSchema base i)

@@ -13,8 +13,8 @@ module Data.Schema
      , record'
      , seq
      , seq'
-     , union
-     , union'
+     , oneOf
+     , oneOf'
      , iso
      , iso'
      ) where

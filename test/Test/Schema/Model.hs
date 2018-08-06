@@ -41,7 +41,7 @@ subordinateCountProp :: JsonField' AdminRole Int
 subordinateCountProp = S.field "subordinateCount" JSON.int' (to subordinateCount)
 
 roleSchema :: JsonSchema' Role
-roleSchema = S.union'
+roleSchema = S.oneOf'
            [ S.alt "user" (S.const' UserRole') _UserRole
            , S.alt "admin" (S.record' (AdminRole' <$> departmentProp <*> subordinateCountProp)) _AdminRole
            ]
