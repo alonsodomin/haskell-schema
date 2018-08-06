@@ -10,6 +10,7 @@ import           Control.Applicative.Free
 import           Control.Functor.HigherOrder
 import           Control.Lens                hiding (iso)
 import           Data.Text                   (Text)
+import qualified Data.Text as T
 import           Data.Vector                 (Vector)
 import           Prelude                     hiding (const, seq)
 
@@ -18,6 +19,9 @@ data FieldDef o s a = FieldDef
   , fieldSchema   :: s a
   , fieldAccessor :: Getter o a
   }
+
+instance Show (s a) => Show (FieldDef o s a) where
+  show f = (T.unpack $ fieldName f) ++ " :: " ++ (show $ fieldSchema f)
 
 instance HFunctor (FieldDef o) where
   hfmap nt = \(FieldDef name sch acc) -> FieldDef name (nt sch) acc

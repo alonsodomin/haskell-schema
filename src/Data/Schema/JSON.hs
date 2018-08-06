@@ -59,6 +59,10 @@ data JsonPrimitive a where
   JsonInt  :: JsonPrimitive Int
   JsonText :: JsonPrimitive Text
 
+instance Show (JsonPrimitive a) where
+  show JsonInt  = "JSON Int"
+  show JsonText = "JSON Text"
+
 type JsonSchema ann a = Schema ann JsonPrimitive a
 type JsonSchema' a = JsonSchema () a
 
