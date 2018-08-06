@@ -11,11 +11,11 @@ module Data.Schema.JSON
      , JsonDeserializer(..)
      , JsonField
      , JsonField'
+     , jsonField
+     , jsonField'
      , JsonSchema
      , JsonSchema'
      , JsonPrimitive(..)
-     , prim
-     , prim'
      , ToJsonSerializer(..)
      , ToJsonDeserializer(..)
      ) where
@@ -58,11 +58,11 @@ type JsonSchema' a = JsonSchema () a
 type JsonField ann o a = Field (Schema ann JsonPrimitive) o a
 type JsonField' o a = JsonField () o a
 
-prim :: ann -> Text -> JsonPrimitive a -> Getter o a -> JsonField ann o a
-prim ann name primSchema getter = prop name (hcofree ann $ PrimitiveSchema primSchema) getter
+jsonField :: ann -> Text -> JsonPrimitive a -> Getter o a -> JsonField ann o a
+jsonField ann name alg getter = field name (prim ann alg) getter
 
-prim' :: Text -> JsonPrimitive a -> Getter o a -> JsonField' o a
-prim' = prim ()
+jsonField' :: Text -> JsonPrimitive a -> Getter o a -> JsonField' o a
+jsonField' = jsonField ()
 
 instance ToJsonSerializer JsonPrimitive where
   toJsonSerializer JsonInt    = JsonSerializer $ Json.Number . fromIntegral

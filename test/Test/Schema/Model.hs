@@ -25,7 +25,7 @@ data Role =
 data UserRole = UserRole'
   deriving (Eq, Show)
 
-data AdminRole = AdminRole' { department :: Text, subordinateCount :: Int }
+data AdminRole = AdminRole' { department :: String, subordinateCount :: Int }
   deriving (Eq, Show)
 
 _UserRole :: Prism' Role UserRole
@@ -38,11 +38,11 @@ _AdminRole = prism' AdminRole $ \case
     AdminRole x -> Just x
     _           -> Nothing
 
-departmentProp :: JsonField' AdminRole Text
-departmentProp = S.prim' "department" S.JsonString (to department)
+departmentProp :: JsonField' AdminRole String
+departmentProp = S.field "department" (S.iso' (S.prim' S.JsonString) stringIso) (to department)
 
 subordinateCountProp :: JsonField' AdminRole Int
-subordinateCountProp = S.prim' "subordinateCount" S.JsonInt (to subordinateCount)
+subordinateCountProp = S.field "subordinateCount" (S.prim' S.JsonInt) (to subordinateCount)
 
 roleSchema :: JsonSchema' Role
 roleSchema = S.union'
@@ -56,9 +56,9 @@ data Person = Person { personName :: Text, birthDate :: Int, roles :: Vector Rol
 personSchema :: JsonSchema' Person
 personSchema = S.record'
              ( Person
-             <$> S.prim' "name" S.JsonString (to personName)
-             <*> S.prim' "birthDate" S.JsonInt (to birthDate)
-             <*> S.prop "roles" (S.seq' roleSchema) (to roles)
+             <$> S.field "name" (S.prim' S.JsonString) (to personName)
+             <*> S.field "birthDate" (S.prim' S.JsonInt) (to birthDate)
+             <*> S.field "roles" (S.seq' roleSchema) (to roles)
              )
 
 instance ToJSON Person where

@@ -2,10 +2,12 @@ module Data.Schema
      ( module Data.Schema.JSON
      , Field
      , Fields
-     , prop
+     , field
      , alt
      , Schema
      , Schema'
+     , prim
+     , prim'
      , const
      , const'
      , record

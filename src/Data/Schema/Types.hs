@@ -25,8 +25,8 @@ instance HFunctor (FieldDef o) where
 type Field s o a = Ap (FieldDef o s) a
 type Fields s o = Field s o o
 
-prop :: Text -> s a -> Getter o a -> Field s o a
-prop name schema getter = liftAp (FieldDef name schema getter)
+field :: Text -> s a -> Getter o a -> Field s o a
+field name schema getter = liftAp (FieldDef name schema getter)
 
 data AltDef s a = forall b. AltDef
   { altName   :: Text
@@ -57,6 +57,12 @@ instance HFunctor (SchemaF p) where
     RecordSchema fields -> RecordSchema $ hoistAp (hfmap nt) fields
     UnionSchema alts    -> UnionSchema $ fmap (hfmap nt) alts
     IsoSchema base i    -> IsoSchema (nt base) i
+
+prim :: ann -> p a -> Schema ann p a
+prim ann primAlg = hcofree ann $ PrimitiveSchema primAlg
+
+prim' :: p a -> Schema' p a
+prim' = prim ()
 
 const :: ann -> a -> Schema ann p a
 const ann a = hcofree ann (RecordSchema $ Pure a)
