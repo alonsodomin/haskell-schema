@@ -9,13 +9,9 @@ import qualified Data.Schema            as S
 import           Data.Schema.JSON       hiding (int', string', text')
 import qualified Data.Schema.JSON       as JSON
 import           Data.Text              (Text)
-import qualified Data.Text              as T
 import           Data.Vector            (Vector)
 import           Test.QuickCheck
 import           Test.Schema.QuickCheck
-
-stringIso :: Iso' Text String
-stringIso = iso T.unpack T.pack
 
 data Role =
     UserRole UserRole
