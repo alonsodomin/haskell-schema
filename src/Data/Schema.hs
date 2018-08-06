@@ -1,6 +1,5 @@
 module Data.Schema
-     ( module Data.Schema.JSON
-     , Field
+     ( Field
      , Fields
      , field
      , alt
@@ -20,6 +19,5 @@ module Data.Schema
      , iso'
      ) where
 
-import           Data.Schema.JSON
 import           Data.Schema.Types
 import           Prelude           hiding (const, seq)

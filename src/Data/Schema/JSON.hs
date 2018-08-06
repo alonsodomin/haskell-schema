@@ -9,12 +9,18 @@
 module Data.Schema.JSON
      ( JsonSerializer(..)
      , JsonDeserializer(..)
+     , JsonSchema
+     , JsonSchema'
+     , text
+     , text'
+     , string
+     , string'
+     , int
+     , int'
      , JsonField
      , JsonField'
      , jsonField
      , jsonField'
-     , JsonSchema
-     , JsonSchema'
      , JsonPrimitive(..)
      , ToJsonSerializer(..)
      , ToJsonDeserializer(..)
@@ -22,7 +28,8 @@ module Data.Schema.JSON
 
 import           Control.Applicative.Free
 import           Control.Functor.HigherOrder
-import           Control.Lens
+import           Control.Lens                hiding (iso)
+import qualified Control.Lens                as Lens
 import           Control.Monad.State         (State)
 import qualified Control.Monad.State         as ST
 import           Control.Natural
@@ -49,11 +56,29 @@ class ToJsonDeserializer s where
   toJsonDeserializer :: s ~> JsonDeserializer
 
 data JsonPrimitive a where
-  JsonInt :: JsonPrimitive Int
-  JsonString :: JsonPrimitive Text
+  JsonInt  :: JsonPrimitive Int
+  JsonText :: JsonPrimitive Text
 
 type JsonSchema ann a = Schema ann JsonPrimitive a
 type JsonSchema' a = JsonSchema () a
+
+text :: ann -> Schema ann JsonPrimitive Text
+text ann = prim ann JsonText
+
+text' :: Schema' JsonPrimitive Text
+text' = text ()
+
+string :: ann -> Schema ann JsonPrimitive String
+string ann = iso ann (text ann) (Lens.iso T.unpack T.pack)
+
+string' :: Schema' JsonPrimitive String
+string' = string ()
+
+int :: ann -> Schema ann JsonPrimitive Int
+int ann = prim ann JsonInt
+
+int' :: Schema' JsonPrimitive Int
+int' = int ()
 
 type JsonField ann o a = Field (Schema ann JsonPrimitive) o a
 type JsonField' o a = JsonField () o a
@@ -65,16 +90,16 @@ jsonField' :: Text -> JsonPrimitive a -> Getter o a -> JsonField' o a
 jsonField' = jsonField ()
 
 instance ToJsonSerializer JsonPrimitive where
-  toJsonSerializer JsonInt    = JsonSerializer $ Json.Number . fromIntegral
-  toJsonSerializer JsonString = JsonSerializer $ Json.String
+  toJsonSerializer JsonInt  = JsonSerializer $ Json.Number . fromIntegral
+  toJsonSerializer JsonText = JsonSerializer $ Json.String
 
 instance (ToJsonSerializer p, ToJsonSerializer q) => ToJsonSerializer (Sum p q) where
   toJsonSerializer (InL l) = toJsonSerializer l
   toJsonSerializer (InR r) = toJsonSerializer r
 
 instance ToGen JsonPrimitive where
-  toGen JsonInt    = QC.chooseAny
-  toGen JsonString = T.pack <$> (QC.listOf QC.chooseAny)
+  toGen JsonInt  = QC.chooseAny
+  toGen JsonText = T.pack <$> (QC.listOf QC.chooseAny)
 
 toJsonSerializerAlg :: ToJsonSerializer p => HAlgebra (SchemaF p) JsonSerializer
 toJsonSerializerAlg = wrapNT $ \case
@@ -100,8 +125,8 @@ instance ToJsonSerializer p => ToJsonSerializer (Schema ann p) where
   toJsonSerializer schema = (cataNT toJsonSerializerAlg) (hforget schema)
 
 instance ToJsonDeserializer JsonPrimitive where
-  toJsonDeserializer JsonInt    = JsonDeserializer $ parseJSON
-  toJsonDeserializer JsonString = JsonDeserializer $ parseJSON
+  toJsonDeserializer JsonInt  = JsonDeserializer $ parseJSON
+  toJsonDeserializer JsonText = JsonDeserializer $ parseJSON
 
 toJsonDeserializerAlg :: ToJsonDeserializer p => HAlgebra (SchemaF p) JsonDeserializer
 toJsonDeserializerAlg = wrapNT $ \case

@@ -5,9 +5,9 @@ module Test.Schema.Model where
 
 import           Control.Lens
 import           Data.Aeson
-import           Data.Schema            (JsonField, JsonSchema)
 import qualified Data.Schema            as S
-import           Data.Schema.JSON
+import           Data.Schema.JSON       hiding (int', string', text')
+import qualified Data.Schema.JSON       as JSON
 import           Data.Text              (Text)
 import qualified Data.Text              as T
 import           Data.Vector            (Vector)
@@ -39,10 +39,10 @@ _AdminRole = prism' AdminRole $ \case
     _           -> Nothing
 
 departmentProp :: JsonField' AdminRole String
-departmentProp = S.field "department" (S.iso' (S.prim' S.JsonString) stringIso) (to department)
+departmentProp = S.field "department" JSON.string' (to department)
 
 subordinateCountProp :: JsonField' AdminRole Int
-subordinateCountProp = S.field "subordinateCount" (S.prim' S.JsonInt) (to subordinateCount)
+subordinateCountProp = S.field "subordinateCount" JSON.int' (to subordinateCount)
 
 roleSchema :: JsonSchema' Role
 roleSchema = S.union'
@@ -56,8 +56,8 @@ data Person = Person { personName :: Text, birthDate :: Int, roles :: Vector Rol
 personSchema :: JsonSchema' Person
 personSchema = S.record'
              ( Person
-             <$> S.field "name" (S.prim' S.JsonString) (to personName)
-             <*> S.field "birthDate" (S.prim' S.JsonInt) (to birthDate)
+             <$> S.field "name" JSON.text' (to personName)
+             <*> S.field "birthDate" JSON.int' (to birthDate)
              <*> S.field "roles" (S.seq' roleSchema) (to roles)
              )
 

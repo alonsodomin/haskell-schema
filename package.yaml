@@ -38,7 +38,7 @@ library:
   source-dirs: src
 
 tests:
-  hexomorph-test:
+  hschema-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
