@@ -1,5 +1,5 @@
 name:                hschema
-version:             0.1.0.0
+version:             0.0.1.0
 github:              "alonsodomin/haskell-schema"
 license:             BSD3
 author:              "Antonio Alonso Dominguez"
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/githubuser/hexomorph#readme>
+description:         Please see the README on GitHub at <https://github.com/alonsodomin/haskell-schema#readme>
 
 dependencies:
 - aeson

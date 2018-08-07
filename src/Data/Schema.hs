@@ -13,6 +13,8 @@ module Data.Schema
      , record'
      , seq
      , seq'
+     , list
+     , list'
      , oneOf
      , oneOf'
      , iso
