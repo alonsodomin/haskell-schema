@@ -9,6 +9,7 @@ module Control.Functor.HigherOrder where
 import           Control.Natural
 
 type HAlgebra f g = f g :~> g
+type HCoalgebra f g = g :~> f g
 
 class HFunctor (f :: ((* -> *) -> * -> *)) where
   hfmap :: (m ~> n) -> f m ~> f n
@@ -41,8 +42,19 @@ cataNT :: HFunctor f => HAlgebra f g -> HFix f ~> g
 cataNT alg = (unwrapNT alg) . nt
   where nt hf = (hfmap (cataNT alg)) (unfix hf)
 
+unfoldNT :: HFunctor f => HCoalgebra f g -> g ~> HFix f
+unfoldNT = undefined
+-- unfoldNT alg = (unwrapNT alg) . nt
+--   where nt hf = HFix (hfmap (unfoldNT alg) hf)
+
 hforgetAlg :: HAlgebra (HEnvT f a) (HFix f)
 hforgetAlg = wrapNT $ \env -> HFix $ hlocal env
 
 hforget :: HFunctor f => HCofree f a ~> HFix f
 hforget = cataNT hforgetAlg
+
+hdecorateAlg :: a -> HCoalgebra (HEnvT f a) (HFix f)
+hdecorateAlg a = wrapNT $ \f -> HEnvT a (unfix f)
+
+hdecorate :: HFunctor f => a -> HFix f ~> HCofree f a
+hdecorate a = unfoldNT (hdecorateAlg a)
