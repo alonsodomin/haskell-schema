@@ -9,6 +9,9 @@
 module Data.Schema.JSON
      ( JsonSerializer(..)
      , JsonDeserializer(..)
+     , ToJsonSerializer(..)
+     , ToJsonDeserializer(..)
+     , JsonPrimitive(..)
      , JsonSchema
      , JsonSchema'
      , text
@@ -21,9 +24,6 @@ module Data.Schema.JSON
      , JsonField'
      , jsonField
      , jsonField'
-     , JsonPrimitive(..)
-     , ToJsonSerializer(..)
-     , ToJsonDeserializer(..)
      ) where
 
 import           Control.Applicative.Free
@@ -46,7 +46,7 @@ import qualified Data.Text                   as T
 import qualified Test.QuickCheck.Gen         as QC
 import           Test.Schema.QuickCheck
 
-newtype JsonSerializer a = JsonSerializer { runJsonSerializer :: a -> Json.Value }
+newtype JsonSerializer a   = JsonSerializer { runJsonSerializer :: a -> Json.Value }
 newtype JsonDeserializer a = JsonDeserializer { runJsonDeserializer :: Json.Value -> Json.Parser a }
 
 class ToJsonSerializer s where
@@ -66,22 +66,22 @@ instance Show (JsonPrimitive a) where
 type JsonSchema ann a = Schema ann JsonPrimitive a
 type JsonSchema' a = JsonSchema () a
 
-text :: ann -> Schema ann JsonPrimitive Text
+text :: ann -> JsonSchema ann Text
 text ann = prim ann JsonText
 
-text' :: Schema' JsonPrimitive Text
+text' :: JsonSchema' Text
 text' = text ()
 
-string :: ann -> Schema ann JsonPrimitive String
+string :: ann -> JsonSchema ann String
 string ann = iso ann (text ann) (Lens.iso T.unpack T.pack)
 
-string' :: Schema' JsonPrimitive String
+string' :: JsonSchema' String
 string' = string ()
 
-int :: ann -> Schema ann JsonPrimitive Int
+int :: ann -> JsonSchema ann Int
 int ann = prim ann JsonInt
 
-int' :: Schema' JsonPrimitive Int
+int' :: JsonSchema' Int
 int' = int ()
 
 type JsonField ann o a = Field (Schema ann JsonPrimitive) o a
@@ -108,21 +108,25 @@ instance ToGen JsonPrimitive where
 toJsonSerializerAlg :: ToJsonSerializer p => HAlgebra (SchemaF p) JsonSerializer
 toJsonSerializerAlg = wrapNT $ \case
   PrimitiveSchema p -> toJsonSerializer p
+
   SeqSchema serializer -> JsonSerializer $ \vec -> Json.Array $ fmap (runJsonSerializer serializer) vec
-  RecordSchema fields -> JsonSerializer $ \obj -> Json.Object $ ST.execState (runAp (encodePropOf obj) fields) Map.empty
-    where encodePropOf :: o -> FieldDef o JsonSerializer v -> State (HashMap Text Json.Value) v
-          encodePropOf o (FieldDef name (JsonSerializer serialize) getter) = do
+
+  RecordSchema fields -> JsonSerializer $ \obj -> Json.Object $ ST.execState (runAp (encodeFieldOf obj) fields) Map.empty
+    where encodeFieldOf :: o -> FieldDef o JsonSerializer v -> State (HashMap Text Json.Value) v
+          encodeFieldOf o (FieldDef name (JsonSerializer serialize) getter) = do
             let el = view getter o
             ST.modify $ Map.insert name (serialize el)
             return el
+
   UnionSchema alts -> JsonSerializer $ \value -> head . catMaybes $ fmap (encodeAlt value) alts
-    where objSingleAttr :: Text -> Json.Value -> Json.Value
-          objSingleAttr n v = Json.Object $ Map.insert n v Map.empty
+    where singleAttrObj :: Text -> Json.Value -> Json.Value
+          singleAttrObj n v = Json.Object $ Map.insert n v Map.empty
 
           encodeAlt :: o -> AltDef JsonSerializer o -> Maybe Json.Value
           encodeAlt o (AltDef name (JsonSerializer serialize) pr) = do
             json <- serialize <$> o ^? pr
-            return $ objSingleAttr name json
+            return $ singleAttrObj name json
+
   IsoSchema (JsonSerializer base) iso -> JsonSerializer $ \value -> base (view (re iso) value)
 
 instance ToJsonSerializer p => ToJsonSerializer (Schema ann p) where
@@ -135,14 +139,17 @@ instance ToJsonDeserializer JsonPrimitive where
 toJsonDeserializerAlg :: ToJsonDeserializer p => HAlgebra (SchemaF p) JsonDeserializer
 toJsonDeserializerAlg = wrapNT $ \case
   PrimitiveSchema p -> toJsonDeserializer p
+
   SeqSchema elemSchema -> JsonDeserializer $ \json -> case json of
     Json.Array v -> traverse (runJsonDeserializer elemSchema) v
     other        -> fail $ "Expected a JSON array but got: " ++ (show other)
+
   RecordSchema fields -> JsonDeserializer $ \json -> case json of
     Json.Object obj -> runAp decodeField fields
       where decodeField :: FieldDef o JsonDeserializer v -> Json.Parser v
             decodeField (FieldDef name (JsonDeserializer deserial) _) = Json.explicitParseField deserial obj name
     other -> fail $ "Expected JSON Object but got: " ++ (show other)
+
   UnionSchema alts -> JsonDeserializer $ \json -> case json of
     Json.Object obj -> head . catMaybes $ fmap lookupParser alts
       where lookupParser :: AltDef JsonDeserializer a -> Maybe (Json.Parser a)
@@ -150,6 +157,7 @@ toJsonDeserializerAlg = wrapNT $ \case
               altParser <- deserial <$> Map.lookup name obj
               return $ (view $ re pr) <$> altParser
     other ->  fail $ "Expected JSON Object but got: " ++ (show other)
+    
   IsoSchema (JsonDeserializer base) iso -> JsonDeserializer $ \json -> (view iso) <$> (base json)
 
 instance ToJsonDeserializer p => ToJsonDeserializer (Schema ann p) where
