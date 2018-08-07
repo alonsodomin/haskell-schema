@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
@@ -10,7 +11,7 @@ import           Control.Applicative.Free
 import           Control.Functor.HigherOrder
 import           Control.Lens                hiding (iso)
 import           Data.Text                   (Text)
-import qualified Data.Text as T
+import qualified Data.Text                   as T
 import           Data.Vector                 (Vector)
 import           Prelude                     hiding (const, seq)
 
