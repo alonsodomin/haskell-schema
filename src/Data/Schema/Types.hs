@@ -10,11 +10,11 @@ module Data.Schema.Types where
 import           Control.Applicative.Free
 import           Control.Functor.HigherOrder
 import           Control.Lens                hiding (iso)
-import qualified Control.Lens as Lens
+import qualified Control.Lens                as Lens
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
 import           Data.Vector                 (Vector)
-import qualified Data.Vector as Vector
+import qualified Data.Vector                 as Vector
 import           Prelude                     hiding (const, seq)
 
 data FieldDef o s a = FieldDef

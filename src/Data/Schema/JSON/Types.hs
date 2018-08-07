@@ -22,6 +22,7 @@ import           Data.Maybe
 import           Data.Schema.Types
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
+import qualified Test.QuickCheck             as QC
 import qualified Test.QuickCheck.Gen         as QC
 import           Test.Schema.QuickCheck
 
@@ -37,18 +38,22 @@ class ToJsonDeserializer s where
 data JsonPrimitive a where
   JsonInt  :: JsonPrimitive Int
   JsonText :: JsonPrimitive Text
+  JsonBool :: JsonPrimitive Bool
 
 instance Show (JsonPrimitive a) where
   show JsonInt  = "JSON Int"
   show JsonText = "JSON Text"
+  show JsonBool = "JSON Bool"
 
 instance ToJsonSerializer JsonPrimitive where
   toJsonSerializer JsonInt  = JsonSerializer $ JSON.Number . fromIntegral
   toJsonSerializer JsonText = JsonSerializer $ JSON.String
+  toJsonSerializer JsonBool = JsonSerializer $ JSON.Bool
 
 instance ToGen JsonPrimitive where
   toGen JsonInt  = QC.chooseAny
   toGen JsonText = T.pack <$> (QC.listOf QC.chooseAny)
+  toGen JsonBool = QC.arbitrary :: (QC.Gen Bool)
 
 instance (ToJsonSerializer p, ToJsonSerializer q) => ToJsonSerializer (Sum p q) where
   toJsonSerializer (InL l) = toJsonSerializer l
@@ -88,6 +93,7 @@ instance (ToJsonDeserializer p, ToJsonDeserializer q) => ToJsonDeserializer (Sum
 instance ToJsonDeserializer JsonPrimitive where
   toJsonDeserializer JsonInt  = JsonDeserializer $ parseJSON
   toJsonDeserializer JsonText = JsonDeserializer $ parseJSON
+  toJsonDeserializer JsonBool = JsonDeserializer $ parseJSON
 
 toJsonDeserializerAlg :: ToJsonDeserializer p => HAlgebra (SchemaF p) JsonDeserializer
 toJsonDeserializerAlg = wrapNT $ \case
