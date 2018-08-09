@@ -32,6 +32,7 @@ instance HFunctor (FieldDef o) where
 type Field s o a = Ap (FieldDef o s) a
 type Fields s o = Field s o o
 
+-- | Define a field
 field :: Text -> s a -> Getter o a -> Field s o a
 field name schema getter = liftAp (FieldDef name schema getter)
 
@@ -44,6 +45,7 @@ data AltDef s a = forall b. AltDef
 instance HFunctor AltDef where
   hfmap nt = \(AltDef name schema pr) -> AltDef name (nt schema) pr
 
+  -- | Define an alternative
 alt :: Text -> s b -> Prism' a b -> AltDef s a
 alt = AltDef
 
@@ -62,45 +64,54 @@ instance HFunctor (SchemaF p) where
     UnionSchema alts    -> UnionSchema $ fmap (hfmap nt) alts
     IsoSchema base i    -> IsoSchema (nt base) i
 
+-- | The Schema type itself for a set of primitives `p` and annotated with `ann`
 type Schema ann p = HCofree (SchemaF p) ann
+-- | Schema for the set of primitives `p` without annotations
 type Schema' p = Schema () p
 
+-- | Define an annotated schema for primitives of type `p`
 prim :: ann -> p a -> Schema ann p a
 prim ann primAlg = hcofree ann $ PrimitiveSchema primAlg
 
 prim' :: p a -> Schema' p a
 prim' = prim ()
 
+-- | Define a schema for a type that is always constant
 const :: ann -> a -> Schema ann p a
 const ann a = hcofree ann (RecordSchema $ Pure a)
 
 const' :: a -> Schema' p a
 const' = const ()
 
+-- | Define the schema of record using the given fields
 record :: ann -> Fields (Schema ann p) a -> Schema ann p a
 record ann ps = hcofree ann (RecordSchema ps)
 
 record' :: Fields (Schema' p) a -> Schema' p a
 record' = record ()
 
+-- | Define the schema of a vector based on the element type
 seq :: ann -> Schema ann p a -> Schema ann p (Vector a)
 seq ann elemSchema = hcofree ann (SeqSchema elemSchema)
 
 seq' :: Schema' p a -> Schema' p (Vector a)
 seq' = seq ()
 
+-- | Define the schema of a list based on the element type
 list :: ann -> Schema ann p a -> Schema ann p [a]
 list ann elemSchema = iso ann (seq ann elemSchema) (Lens.iso Vector.toList Vector.fromList)
 
 list' :: Schema' p a -> Schema' p [a]
 list' = list ()
 
+-- | Define the schema of an union (coproduct) type based on the given alternatives
 oneOf :: ann -> [AltDef (Schema ann p) a] -> Schema ann p a
 oneOf ann alts = hcofree ann (UnionSchema alts)
 
 oneOf' :: [AltDef (Schema' p) a] -> Schema' p a
 oneOf' = oneOf ()
 
+-- | Define an schema that is isomorphic to another one using the given ISO transformation
 iso :: ann -> Schema ann p a -> Iso' a b -> Schema ann p b
 iso ann base i = hcofree ann (IsoSchema base i)
 
