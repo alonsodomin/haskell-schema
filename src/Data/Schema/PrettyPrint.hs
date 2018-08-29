@@ -12,8 +12,8 @@ import           Control.Functor.HigherOrder
 import           Control.Monad.State                       (State)
 import qualified Control.Monad.State                       as ST
 import           Control.Natural
+import           Data.Functor.Sum
 import           Data.Schema.Types
-import           Data.Text                                 (Text)
 import           Data.Text.Prettyprint.Doc                 ((<+>), (<>))
 import qualified Data.Text.Prettyprint.Doc                 as PP
 import qualified Data.Text.Prettyprint.Doc.Render.Terminal as PP
@@ -23,6 +23,10 @@ newtype Doc a = MkDoc { getDoc :: AnsiDoc } deriving Functor
 
 class ToDoc s where
   toDoc :: s ~> Doc
+
+instance (ToDoc p, ToDoc q) => ToDoc (Sum p q) where
+  toDoc (InL l) = toDoc l
+  toDoc (InR r) = toDoc r
 
 toDocAlg :: ToDoc s => HAlgebra (SchemaF s) Doc
 toDocAlg = wrapNT $ \case
