@@ -60,10 +60,10 @@ instance ToGen JsonPrimitive where
   toGen JsonText   = T.pack <$> (QC.listOf QC.chooseAny)
   toGen JsonBool   = QC.arbitrary :: (QC.Gen Bool)
 
-instance ToDoc JsonPrimitive where
-  toDoc JsonNumber = MkDoc $ PP.pretty "Number"
-  toDoc JsonText   = MkDoc $ PP.pretty "Text"
-  toDoc JsonBool   = MkDoc $ PP.pretty "Bool"
+instance ToSchemaDoc JsonPrimitive where
+  toSchemaDoc JsonNumber = SchemaDoc $ PP.pretty "Number"
+  toSchemaDoc JsonText   = SchemaDoc $ PP.pretty "Text"
+  toSchemaDoc JsonBool   = SchemaDoc $ PP.pretty "Bool"
 
 instance (ToJsonSerializer p, ToJsonSerializer q) => ToJsonSerializer (Sum p q) where
   toJsonSerializer (InL l) = toJsonSerializer l
