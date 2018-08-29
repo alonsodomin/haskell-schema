@@ -1,5 +1,6 @@
 module Data.Schema.PrettyPrint where
 
+import           Data.Schema.Types
 import qualified Data.Text.Prettyprint.Doc as Doc
 import qualified Data.Text.Prettyprint.Doc.Render.Terminal as Doc
 
