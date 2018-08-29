@@ -30,6 +30,8 @@ dependencies:
 - free
 - QuickCheck
 - quickcheck-instances
+- prettyprinter
+- prettyprinter-ansi-terminal
 - scientific
 - text
 - time
