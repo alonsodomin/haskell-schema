@@ -106,4 +106,25 @@ instance Arbitrary Person where
   arbitrary = toGen personSchema
 ```
 
+There is also built-in support for pretty printing schemas:
+
+```haskell
+import Data.Schema.PrettyPrint
+
+putSchema personSchema
+```
+
+That will produce an output similar to the following:
+
+```
+* roles: [
+  - user
+  - admin
+    * subordinateCount: Number
+    * department: Text
+]
+* birthDate: Number
+* name: Text
+```
+
 _**Note:** The following example has been extracted from the [xenomorph](https://github.com/nuttycom/xenomorph) library, which served as an inspiration for writing this one._
