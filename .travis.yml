@@ -20,3 +20,6 @@ install:
 
 script:
 - stack --no-terminal test --haddock --no-haddock-deps
+
+after_success:
+- scripts/travis_release.sh
