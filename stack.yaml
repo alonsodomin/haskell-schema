@@ -39,18 +39,6 @@ packages:
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
 extra-deps:
-# - category-extras-1.0.2
-# - categories-1.0.7
-# - comonad-extras-4.0
-# - comonad-4.2
-# - comonad-transformers-4.0
-# - comonads-fd-4.0
-# - groupoids-4.0
-# - indexed-0.1.3
-# - indexed-extras-0.2
-# - profunctor-extras-4.0
-# - representable-functors-3.2.0.2
-# - representable-profunctors-3.2
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

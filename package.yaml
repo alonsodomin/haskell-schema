@@ -29,6 +29,8 @@ dependencies:
 - lens
 - free
 - QuickCheck
+- quickcheck-instances
+- scientific
 - text
 - time
 - unordered-containers
