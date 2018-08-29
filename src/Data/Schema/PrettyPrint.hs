@@ -60,3 +60,11 @@ putSchema :: ToSchemaDoc s => s a -> IO ()
 putSchema schema = do
   PP.putDoc . getDoc $ toSchemaDoc schema
   putStrLn ""
+
+newtype SchemaLayout a = SchemaLayout { getLayout :: a -> AnsiDoc }
+
+class ToSchemaLayout s where
+  toSchemaLayout :: s ~> SchemaLayout
+
+putSchemaLayout :: ToSchemaLayout s => s a -> (a -> IO ())
+putSchemaLayout = undefined
