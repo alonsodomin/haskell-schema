@@ -13,9 +13,6 @@ import           Control.Applicative.Free
 import           Control.Functor.HigherOrder
 import           Control.Lens                hiding (iso)
 import qualified Control.Lens                as Lens
-import           Control.Monad.State         (State)
-import qualified Control.Monad.State         as ST
-import           Data.Functor.Identity
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
 import           Data.Vector                 (Vector)
@@ -36,14 +33,6 @@ instance HFunctor (FieldDef o) where
 
 type Field s o a = Ap (FieldDef o s) a
 type Fields s o = Field s o o
-
--- instance Show (s a) => Show (Field s o a) where
---   show fields = show $ ST.execState (runAp (describeField show) fields) []
---     where describeField :: (FieldDef o s a -> String) -> FieldDef o s a -> State [String] a
---           describeField f curr = do
---             prev <- ST.get
---             ST.put $ (f curr):prev
---             return undefined
 
 -- | Define a field
 field :: Text -> s a -> Getter o a -> Field s o a

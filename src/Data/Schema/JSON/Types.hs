@@ -9,23 +9,26 @@ module Data.Schema.JSON.Types where
 
 import           Control.Applicative.Free
 import           Control.Functor.HigherOrder
-import           Control.Lens                         hiding (iso)
-import           Control.Monad.State                  (State)
-import qualified Control.Monad.State                  as ST
+import           Control.Lens                              hiding (iso)
+import           Control.Monad.State                       (State)
+import qualified Control.Monad.State                       as ST
 import           Control.Natural
-import           Data.Aeson                           (parseJSON)
-import qualified Data.Aeson.Types                     as JSON
+import           Data.Aeson                                (parseJSON)
+import qualified Data.Aeson.Types                          as JSON
 import           Data.Functor.Sum
-import           Data.HashMap.Strict                  (HashMap)
-import qualified Data.HashMap.Strict                  as Map
+import           Data.HashMap.Strict                       (HashMap)
+import qualified Data.HashMap.Strict                       as Map
 import           Data.Maybe
+import           Data.Schema.PrettyPrint
 import           Data.Schema.Types
 import           Data.Scientific
-import           Data.Text                            (Text)
-import qualified Data.Text                            as T
-import qualified Test.QuickCheck                      as QC
-import qualified Test.QuickCheck.Gen                  as QC
-import           Test.QuickCheck.Instances.Scientific ()
+import           Data.Text                                 (Text)
+import qualified Data.Text                                 as T
+import qualified Data.Text.Prettyprint.Doc                 as PP
+import qualified Data.Text.Prettyprint.Doc.Render.Terminal as PP
+import qualified Test.QuickCheck                           as QC
+import qualified Test.QuickCheck.Gen                       as QC
+import           Test.QuickCheck.Instances.Scientific      ()
 import           Test.Schema.QuickCheck
 
 newtype JsonSerializer a   = JsonSerializer { runJsonSerializer :: a -> JSON.Value }
@@ -56,6 +59,11 @@ instance ToGen JsonPrimitive where
   toGen JsonNumber = QC.arbitrary
   toGen JsonText   = T.pack <$> (QC.listOf QC.chooseAny)
   toGen JsonBool   = QC.arbitrary :: (QC.Gen Bool)
+
+instance ToDoc JsonPrimitive where
+  toDoc JsonNumber = MkDoc $ PP.pretty "Number"
+  toDoc JsonText   = MkDoc $ PP.pretty "Text"
+  toDoc JsonBool   = MkDoc $ PP.pretty "Bool"
 
 instance (ToJsonSerializer p, ToJsonSerializer q) => ToJsonSerializer (Sum p q) where
   toJsonSerializer (InL l) = toJsonSerializer l
