@@ -5,6 +5,7 @@ module Data.Schema
      , alt
      , Schema
      , Schema'
+     , HasSchema (..)
      , prim
      , prim'
      , const

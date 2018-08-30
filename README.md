@@ -40,6 +40,10 @@ _**Note:** The following example has been extracted from the [xenomorph](https:/
 Let's start by defining a some data types alongside some lenses:
 
 ```haskell
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
+
 import Control.Lens
 
 data Role =
@@ -102,21 +106,17 @@ roleSchema = S.oneOf'
            ]
 ```
 
-Once you have defined the schema, you can use it produce encoders and generators:
+Once you have defined the schema, by proving an instance for the `HasSchema` typeclass,
+ you'll get JSON decoders, encoders, generators, etc. for free right away.
 
 ```haskell
-import Data.Aeson
-import Test.QuickCheck
-import Test.Schema.QuickCheck
+import Data.Schema (HasSchema(..))
 
-instance ToJSON Person where
-  toJSON = runJsonSerializer . toJsonSerializer $ personSchema
+instance HasSchema Person where
+  type Ann Person = ()
+  type PrimitivesOf Person = JsonPrimitive
 
-instance FromJSON Person where
-  parseJSON = runJsonDeserializer . toJsonDeserializer $ personSchema
-
-instance Arbitrary Person where
-  arbitrary = toGen personSchema
+  getSchema = personSchema
 ```
 
 ### Pretty Printer

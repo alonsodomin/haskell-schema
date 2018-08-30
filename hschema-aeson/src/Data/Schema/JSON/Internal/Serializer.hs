@@ -4,6 +4,7 @@
 {-# LANGUAGE LambdaCase           #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Data.Schema.JSON.Internal.Serializer where
 

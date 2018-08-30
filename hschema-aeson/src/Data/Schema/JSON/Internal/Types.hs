@@ -13,7 +13,7 @@ import qualified Data.Text.Prettyprint.Doc            as PP
 import qualified Test.QuickCheck                      as QC
 import qualified Test.QuickCheck.Gen                  as QC
 import           Test.QuickCheck.Instances.Scientific ()
-import           Test.Schema.QuickCheck
+import           Test.Schema.QuickCheck.Internal.Gen
 
 data JsonPrimitive a where
   JsonNumber :: JsonPrimitive Scientific

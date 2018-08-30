@@ -1,10 +1,12 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 module Test.Schema.Model where
 
 import           Control.Lens
 import           Data.Aeson
+import           Data.Schema             (HasSchema (..))
 import qualified Data.Schema             as S
 import           Data.Schema.JSON
 import           Data.Schema.JSON.Simple (JsonSchema)
@@ -57,11 +59,7 @@ personSchema = S.record'
              <*> S.field "roles"     (S.list' roleSchema) (to roles)
              )
 
-instance ToJSON Person where
-  toJSON = runJsonSerializer . toJsonSerializer $ personSchema
-
-instance FromJSON Person where
-  parseJSON = runJsonDeserializer . toJsonDeserializer $ personSchema
-
-instance Arbitrary Person where
-  arbitrary = toGen personSchema
+instance HasSchema Person where
+  type Ann Person = ()
+  type PrimitivesOf Person = JsonPrimitive
+  getSchema = personSchema

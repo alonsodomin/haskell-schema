@@ -5,6 +5,7 @@
 {-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
 
 module Data.Schema.Internal.Types where
@@ -75,6 +76,12 @@ instance HFunctor (SchemaF p) where
 type Schema ann p = HCofree (SchemaF p) ann
 -- | Schema for the set of primitives `p` without annotations
 type Schema' p = Schema () p
+
+class HasSchema a where
+  type Ann a :: *
+  type PrimitivesOf a :: * -> *
+
+  getSchema :: Schema (Ann a) (PrimitivesOf a) a
 
 -- | Define an annotated schema for primitives of type `p`
 prim :: ann -> p a -> Schema ann p a
