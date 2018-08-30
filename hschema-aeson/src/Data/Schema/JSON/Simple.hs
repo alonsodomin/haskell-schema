@@ -4,8 +4,7 @@
 
 module Data.Schema.JSON.Simple where
 
-import           Control.Lens                    hiding (iso)
-import qualified Control.Lens                    as Lens
+import           Control.Lens
 import           Data.Schema
 import           Data.Schema.JSON.Internal.Types
 import           Data.Scientific
@@ -21,7 +20,7 @@ text = prim' JsonText
 
 -- | Define a string primitive
 string :: JsonSchema String
-string = iso' text (Lens.iso T.unpack T.pack)
+string = alias' text (iso T.unpack T.pack)
 
 -- | Define a scientific number primitive
 number :: JsonSchema Scientific
@@ -29,11 +28,11 @@ number = prim' JsonNumber
 
 -- | Define an integral primitive
 int :: Integral a => JsonSchema a
-int = iso' number $ Lens.iso (\x -> either truncate id $ floatingOrInteger x) fromIntegral
+int = alias' number $ iso (\x -> either truncate id $ floatingOrInteger x) fromIntegral
 
 -- | Define a floating point primitive
 real :: RealFloat a => JsonSchema a
-real = iso' number $ Lens.iso (\x -> either id fromIntegral $ floatingOrInteger x) fromFloatDigits
+real = alias' number $ iso (\x -> either id fromIntegral $ floatingOrInteger x) fromFloatDigits
 
 -- | Simple JSON field type
 type JsonField o a = Field (Schema' JsonPrimitive) o a

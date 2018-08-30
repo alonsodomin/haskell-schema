@@ -34,7 +34,7 @@ genAlg = wrapNT $ \case
   UnionSchema alts     -> oneof $ fmap genAlt alts
     where genAlt :: AltDef Gen a -> Gen a
           genAlt (AltDef _ genSingle pr) = (view $ re pr) <$> genSingle
-  IsoSchema base iso -> view iso <$> base
+  AliasSchema base iso -> view iso <$> base
 
 instance ToGen s => ToGen (Schema ann s) where
   toGen schema = (cataNT genAlg) (hforget schema)

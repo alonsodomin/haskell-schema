@@ -57,7 +57,7 @@ toJsonSerializerAlg = wrapNT $ \case
             json <- serialize <$> o ^? pr
             return $ singleAttrObj name json
 
-  IsoSchema (JsonSerializer base) iso -> JsonSerializer $ \value -> base (view (re iso) value)
+  AliasSchema (JsonSerializer base) iso -> JsonSerializer $ \value -> base (view (re iso) value)
 
 instance ToJsonSerializer p => ToJsonSerializer (Schema ann p) where
   toJsonSerializer schema = (cataNT toJsonSerializerAlg) (hforget schema)
@@ -88,7 +88,7 @@ toJsonDeserializerAlg = wrapNT $ \case
               return $ (view $ re pr) <$> altParser
     other ->  fail $ "Expected JSON Object but got: " ++ (show other)
 
-  IsoSchema (JsonDeserializer base) iso -> JsonDeserializer $ \json -> (view iso) <$> (base json)
+  AliasSchema (JsonDeserializer base) iso -> JsonDeserializer $ \json -> (view iso) <$> (base json)
 
 instance ToJsonDeserializer p => ToJsonDeserializer (Schema ann p) where
   toJsonDeserializer schema = (cataNT toJsonDeserializerAlg) (hforget schema)

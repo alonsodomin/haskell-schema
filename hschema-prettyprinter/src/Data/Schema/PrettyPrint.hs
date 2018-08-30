@@ -74,7 +74,7 @@ toSchemaDocAlg = wrapNT $ \case
   UnionSchema alts -> SchemaDoc $ PP.vsep $ layoutAlts altDoc' alts
     where altDoc' :: AltDef SchemaDoc a -> Maybe AnsiDoc
           altDoc' (AltDef _ (SchemaDoc doc) _) = Just doc
-  IsoSchema baseDoc _ -> SchemaDoc $ getDoc baseDoc
+  AliasSchema baseDoc _ -> SchemaDoc $ getDoc baseDoc
 
 instance ToSchemaDoc s => ToSchemaDoc (Schema ann s) where
   toSchemaDoc schema = (cataNT toSchemaDocAlg) (hforget schema)
@@ -106,7 +106,7 @@ toSchemaLayoutAlg = wrapNT $ \case
   UnionSchema alts -> SchemaLayout $ \value -> head $ layoutAlts (layoutAlt' value) alts
     where layoutAlt' :: o -> AltDef SchemaLayout o -> Maybe AnsiDoc
           layoutAlt' obj (AltDef _ (SchemaLayout layout) getter) = layout <$> obj ^? getter
-  IsoSchema (SchemaLayout baseLayout) getter -> SchemaLayout $ \value -> baseLayout (view (re getter) value)
+  AliasSchema (SchemaLayout baseLayout) getter -> SchemaLayout $ \value -> baseLayout (view (re getter) value)
 
 instance ToSchemaLayout s => ToSchemaLayout (Schema ann s) where
   toSchemaLayout schema = (cataNT toSchemaLayoutAlg) (hforget schema)
