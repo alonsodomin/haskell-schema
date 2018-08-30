@@ -19,6 +19,7 @@ import           Data.Vector                 (Vector)
 import qualified Data.Vector                 as Vector
 import           Prelude                     hiding (const, seq)
 
+-- | Metadata for a field of type `a`, belonging to the data type `o` and based on schema `s`
 data FieldDef o s a = FieldDef
   { fieldName     :: Text
   , fieldSchema   :: s a
@@ -31,13 +32,16 @@ instance Show (s a) => Show (FieldDef o s a) where
 instance HFunctor (FieldDef o) where
   hfmap nt = \(FieldDef name sch acc) -> FieldDef name (nt sch) acc
 
+-- | The type of a field of type `a`, belonging to the data type `o` and based on schema `s`
 type Field s o a = Ap (FieldDef o s) a
+-- | The set of fields for the data type `o` based on schema `s`
 type Fields s o = Field s o o
 
 -- | Define a field
 field :: Text -> s a -> Getter o a -> Field s o a
 field name schema getter = liftAp (FieldDef name schema getter)
 
+-- | Metadata for an alternative of type `a` based on schema `s`
 data AltDef s a = forall b. AltDef
   { altName   :: Text
   , altSchema :: s b
@@ -47,10 +51,11 @@ data AltDef s a = forall b. AltDef
 instance HFunctor AltDef where
   hfmap nt = \(AltDef name schema pr) -> AltDef name (nt schema) pr
 
-  -- | Define an alternative
+-- | Define an alternative
 alt :: Text -> s b -> Prism' a b -> AltDef s a
 alt = AltDef
 
+-- | Metadata for a schema `s` based on primitives `p` and representing type `a`
 data SchemaF p s a where
   PrimitiveSchema :: p a -> SchemaF p s a
   SeqSchema       :: s a -> SchemaF p s (Vector a)
