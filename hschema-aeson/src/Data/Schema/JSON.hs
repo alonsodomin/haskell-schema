@@ -6,4 +6,5 @@ module Data.Schema.JSON
      , JsonPrimitive(..)
      ) where
 
-import           Data.Schema.JSON.Types
+import           Data.Schema.JSON.Internal.Serializer
+import           Data.Schema.JSON.Internal.Types

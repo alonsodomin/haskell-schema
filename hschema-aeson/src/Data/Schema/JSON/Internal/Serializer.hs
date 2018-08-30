@@ -5,30 +5,21 @@
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-module Data.Schema.JSON.Types where
+module Data.Schema.JSON.Internal.Serializer where
 
 import           Control.Applicative.Free
 import           Control.Functor.HigherOrder
-import           Control.Lens                         hiding (iso)
-import           Control.Monad.State                  (State)
-import qualified Control.Monad.State                  as ST
+import           Control.Lens                hiding (iso)
+import           Control.Monad.State         (State)
+import qualified Control.Monad.State         as ST
 import           Control.Natural
-import           Data.Aeson                           (parseJSON)
-import qualified Data.Aeson.Types                     as JSON
+import qualified Data.Aeson.Types            as JSON
 import           Data.Functor.Sum
-import           Data.HashMap.Strict                  (HashMap)
-import qualified Data.HashMap.Strict                  as Map
+import           Data.HashMap.Strict         (HashMap)
+import qualified Data.HashMap.Strict         as Map
 import           Data.Maybe
-import           Data.Schema.PrettyPrint
-import           Data.Schema.Types
-import           Data.Scientific
-import           Data.Text                            (Text)
-import qualified Data.Text                            as T
-import qualified Data.Text.Prettyprint.Doc            as PP
-import qualified Test.QuickCheck                      as QC
-import qualified Test.QuickCheck.Gen                  as QC
-import           Test.QuickCheck.Instances.Scientific ()
-import           Test.Schema.QuickCheck
+import           Data.Schema.Internal.Types
+import           Data.Text                   (Text)
 
 newtype JsonSerializer a   = JsonSerializer { runJsonSerializer :: a -> JSON.Value }
 newtype JsonDeserializer a = JsonDeserializer { runJsonDeserializer :: JSON.Value -> JSON.Parser a }
@@ -38,36 +29,6 @@ class ToJsonSerializer s where
 
 class ToJsonDeserializer s where
   toJsonDeserializer :: s ~> JsonDeserializer
-
-data JsonPrimitive a where
-  JsonNumber :: JsonPrimitive Scientific
-  JsonText   :: JsonPrimitive Text
-  JsonBool   :: JsonPrimitive Bool
-
-instance Show (JsonPrimitive a) where
-  show JsonNumber = "JSON Number"
-  show JsonText   = "JSON Text"
-  show JsonBool   = "JSON Bool"
-
-instance ToJsonSerializer JsonPrimitive where
-  toJsonSerializer JsonNumber = JsonSerializer $ JSON.Number
-  toJsonSerializer JsonText   = JsonSerializer $ JSON.String
-  toJsonSerializer JsonBool   = JsonSerializer $ JSON.Bool
-
-instance ToGen JsonPrimitive where
-  toGen JsonNumber = QC.arbitrary
-  toGen JsonText   = T.pack <$> (QC.listOf QC.chooseAny)
-  toGen JsonBool   = QC.arbitrary :: (QC.Gen Bool)
-
-instance ToSchemaDoc JsonPrimitive where
-  toSchemaDoc JsonNumber = SchemaDoc $ PP.pretty "Number"
-  toSchemaDoc JsonText   = SchemaDoc $ PP.pretty "Text"
-  toSchemaDoc JsonBool   = SchemaDoc $ PP.pretty "Bool"
-
-instance ToSchemaLayout JsonPrimitive where
-  toSchemaLayout JsonNumber = SchemaLayout $ PP.unsafeViaShow
-  toSchemaLayout JsonText   = SchemaLayout $ PP.unsafeViaShow
-  toSchemaLayout JsonBool   = SchemaLayout $ PP.unsafeViaShow
 
 instance (ToJsonSerializer p, ToJsonSerializer q) => ToJsonSerializer (Sum p q) where
   toJsonSerializer (InL l) = toJsonSerializer l
@@ -103,11 +64,6 @@ instance ToJsonSerializer p => ToJsonSerializer (Schema ann p) where
 instance (ToJsonDeserializer p, ToJsonDeserializer q) => ToJsonDeserializer (Sum p q) where
   toJsonDeserializer (InL l) = toJsonDeserializer l
   toJsonDeserializer (InR r) = toJsonDeserializer r
-
-instance ToJsonDeserializer JsonPrimitive where
-  toJsonDeserializer JsonNumber = JsonDeserializer $ parseJSON
-  toJsonDeserializer JsonText   = JsonDeserializer $ parseJSON
-  toJsonDeserializer JsonBool   = JsonDeserializer $ parseJSON
 
 toJsonDeserializerAlg :: ToJsonDeserializer p => HAlgebra (SchemaF p) JsonDeserializer
 toJsonDeserializerAlg = wrapNT $ \case

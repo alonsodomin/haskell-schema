@@ -21,5 +21,5 @@ module Data.Schema
      , iso'
      ) where
 
-import           Data.Schema.Types
-import           Prelude           hiding (const, seq)
+import           Data.Schema.Internal.Types
+import           Prelude                    hiding (const, seq)

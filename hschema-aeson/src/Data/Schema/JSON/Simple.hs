@@ -4,13 +4,13 @@
 
 module Data.Schema.JSON.Simple where
 
-import           Control.Lens           hiding (iso)
-import qualified Control.Lens           as Lens
-import           Data.Schema.JSON.Types
-import           Data.Schema.Types
+import           Control.Lens                    hiding (iso)
+import qualified Control.Lens                    as Lens
+import           Data.Schema
+import           Data.Schema.JSON.Internal.Types
 import           Data.Scientific
-import           Data.Text              (Text)
-import qualified Data.Text              as T
+import           Data.Text                       (Text)
+import qualified Data.Text                       as T
 
 -- | Simple JSON schema type
 type JsonSchema a = Schema' JsonPrimitive a

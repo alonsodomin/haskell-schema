@@ -11,7 +11,7 @@ import           Control.Functor.HigherOrder
 import           Control.Lens
 import           Control.Natural
 import           Data.Functor.Sum
-import           Data.Schema.Types
+import           Data.Schema.Internal.Types
 import qualified Data.Vector                 as Vector
 import           Test.QuickCheck
 

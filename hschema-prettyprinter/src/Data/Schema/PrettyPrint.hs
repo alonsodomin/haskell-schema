@@ -24,7 +24,7 @@ import qualified Control.Monad.State                       as ST
 import           Control.Natural
 import           Data.Functor.Sum
 import           Data.Maybe
-import           Data.Schema.Types
+import           Data.Schema.Internal.Types
 import           Data.Text.Prettyprint.Doc                 ((<+>), (<>))
 import qualified Data.Text.Prettyprint.Doc                 as PP
 import qualified Data.Text.Prettyprint.Doc.Render.Terminal as PP

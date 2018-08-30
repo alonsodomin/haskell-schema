@@ -7,7 +7,7 @@
 {-# LANGUAGE RankNTypes                #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
 
-module Data.Schema.Types where
+module Data.Schema.Internal.Types where
 
 import           Control.Applicative.Free
 import           Control.Functor.HigherOrder
