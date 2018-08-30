@@ -32,6 +32,7 @@ import qualified Data.Vector                               as Vector
 
 type AnsiDoc = PP.Doc PP.AnsiStyle
 
+indentAmount :: Int
 indentAmount = 2
 
 doubleColon :: AnsiDoc
@@ -78,6 +79,7 @@ toSchemaDocAlg = wrapNT $ \case
 instance ToSchemaDoc s => ToSchemaDoc (Schema ann s) where
   toSchemaDoc schema = (cataNT toSchemaDocAlg) (hforget schema)
 
+-- | Renders the given schema to the standard out
 putSchema :: ToSchemaDoc s => s a -> IO ()
 putSchema schema = do
   PP.putDoc . getDoc $ toSchemaDoc schema
@@ -101,7 +103,7 @@ toSchemaLayoutAlg = wrapNT $ \case
           fieldDocOf obj (FieldDef _ (SchemaLayout layout) getter) =
             let el = view getter obj
             in layout el
-  UnionSchema alts -> SchemaLayout $ \value ->  (head $ layoutAlts (layoutAlt' value) alts)
+  UnionSchema alts -> SchemaLayout $ \value -> head $ layoutAlts (layoutAlt' value) alts
     where layoutAlt' :: o -> AltDef SchemaLayout o -> Maybe AnsiDoc
           layoutAlt' obj (AltDef _ (SchemaLayout layout) getter) = layout <$> obj ^? getter
   IsoSchema (SchemaLayout baseLayout) getter -> SchemaLayout $ \value -> baseLayout (view (re getter) value)
@@ -109,6 +111,7 @@ toSchemaLayoutAlg = wrapNT $ \case
 instance ToSchemaLayout s => ToSchemaLayout (Schema ann s) where
   toSchemaLayout schema = (cataNT toSchemaLayoutAlg) (hforget schema)
 
+-- | Generates a renderer of data types based on the given schema
 prettyPrinter :: ToSchemaLayout s => s a -> (a -> IO ())
 prettyPrinter schema = \x -> do
   PP.putDoc $ runSchemaLayout (toSchemaLayout schema) x
