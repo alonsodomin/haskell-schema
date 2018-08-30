@@ -83,7 +83,7 @@ import qualified Data.Schema.JSON.Simple as JSON
 personSchema :: JsonSchema Person
 personSchema = S.record'
              ( Person
-             <$> S.field "name"  JSON.text            (to personName)
+             <$> S.field "name"  JSON.string          (to personName)
              <*> S.field "age"   JSON.int             (to personAge)
              <*> S.field "roles" (S.list' roleSchema) (to personRoles)
              )
