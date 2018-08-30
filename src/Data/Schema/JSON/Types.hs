@@ -65,7 +65,7 @@ instance ToSchemaDoc JsonPrimitive where
   toSchemaDoc JsonBool   = SchemaDoc $ PP.pretty "Bool"
 
 instance ToSchemaLayout JsonPrimitive where
-  toSchemaLayout JsonNumber = SchemaLayout $ \x -> PP.pretty (show x)
+  toSchemaLayout JsonNumber = SchemaLayout $ PP.unsafeViaShow
   toSchemaLayout JsonText   = SchemaLayout $ PP.unsafeViaShow
   toSchemaLayout JsonBool   = SchemaLayout $ PP.unsafeViaShow
 

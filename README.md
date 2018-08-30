@@ -106,6 +106,10 @@ instance Arbitrary Person where
   arbitrary = toGen personSchema
 ```
 
+## Additional Usages
+
+### Pretty Printer
+
 There is also built-in support for pretty printing schemas:
 
 ```haskell
@@ -117,14 +121,22 @@ putSchema personSchema
 That will produce an output similar to the following:
 
 ```
-* roles: [
+* roles :: [
   - user
   - admin
-    * subordinateCount: Number
-    * department: Text
+    * subordinateCount :: Number
+    * department :: Text
 ]
-* birthDate: Number
-* name: Text
+* birthDate :: Number
+* name :: Text
+```
+
+Not happy with that? What about a pretty printer based on the given schema? Just use the `prettyPrinter` function, which will
+return you a `a -> IO ()` function that you can use to print your data types:
+
+```haskell
+pprintPerson :: Person -> IO ()
+pprintPerson = prettyPrinter personSchema
 ```
 
 _**Note:** The following example has been extracted from the [xenomorph](https://github.com/nuttycom/xenomorph) library, which served as an inspiration for writing this one._
