@@ -1,0 +1,35 @@
+name:                hschema-prettyprinter
+version:             0.0.1.0
+github:              "alonsodomin/haskell-schema"
+license:             BSD3
+author:              "Antonio Alonso Dominguez"
+maintainer:          "alonso.domin@gmail.com"
+copyright:           "2018 Antonio Alonso Dominguez"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/alonsodomin/haskell-schema#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- hschema >= 0.0.1.0 && < 0.0.2.0
+- mtl
+- natural-transformation
+- lens
+- free
+- prettyprinter
+- prettyprinter-ansi-terminal
+- text
+- vector
+
+library:
+  source-dirs: src

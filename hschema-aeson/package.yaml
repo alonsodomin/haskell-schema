@@ -1,4 +1,4 @@
-name:                hschema
+name:                hschema-aeson
 version:             0.0.1.0
 github:              "alonsodomin/haskell-schema"
 license:             BSD3
@@ -21,9 +21,11 @@ description:         Please see the README on GitHub at <https://github.com/alon
 
 dependencies:
 - aeson
+- hschema >= 0.0.1.0 && < 0.0.2.0
+- hschema-prettyprinter >= 0.0.1.0 && < 0.0.2.0
+- hschema-quickcheck >= 0.0.1.0 && < 0.0.2.0
 - base >= 4.7 && < 5
 - comonad >= 5.0 && < 5.1
-- QuickCheck
 - mtl
 - natural-transformation
 - lens
@@ -51,3 +53,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - hschema
+    - hschema-aeson

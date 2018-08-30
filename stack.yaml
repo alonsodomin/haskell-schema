@@ -34,7 +34,11 @@ resolver: lts-12.8
 #  - auto-update
 #  - wai
 packages:
-- .
+- hschema
+- hschema-quickcheck
+- hschema-prettyprinter
+- hschema-aeson
+
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
