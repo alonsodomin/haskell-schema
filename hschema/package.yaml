@@ -1,5 +1,6 @@
 name:                hschema
 version:             0.0.1.0
+category:            Data,Schema
 github:              "alonsodomin/haskell-schema"
 license:             BSD3
 author:              "Antonio Alonso Dominguez"
@@ -11,8 +12,7 @@ extra-source-files:
 - ChangeLog.md
 
 # Metadata used when publishing your package
-# synopsis:            Short description of your package
-# category:            Web
+synopsis:            Describing Haskell data types as schemas and obtain free generators, JSON codecs, pretty printers, etc.
 
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is

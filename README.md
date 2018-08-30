@@ -24,6 +24,19 @@ On top of that, what about supporting two versions of your protocol? That will g
 
 ## How to use it?
 
+Haskell Schema is distributed as a set of packages that together provide a cohesive set of features:
+
+ * `hschema`: This is the core package, defining the base building pieces
+ * `hschema-aeson`: This is a package that provides JSON encoding and decoding using Aeson.
+ * `hschema-quickcheck`: This package will provide with QuickCheck generators based on our schema.
+ * `hschema-prettyprinter`: This package brings pretty priting utilities.
+
+In the following example we are going to make use of all those packages.
+
+### Example
+
+_**Note:** The following example has been extracted from the [xenomorph](https://github.com/nuttycom/xenomorph) library, which served as an inspiration for writing this one._
+
 Let's start by defining a some data types alongside some lenses:
 
 ```haskell
@@ -106,8 +119,6 @@ instance Arbitrary Person where
   arbitrary = toGen personSchema
 ```
 
-## Additional Usages
-
 ### Pretty Printer
 
 There is also built-in support for pretty printing schemas:
@@ -138,5 +149,3 @@ return you a `a -> IO ()` function that you can use to print your data types:
 pprintPerson :: Person -> IO ()
 pprintPerson = prettyPrinter personSchema
 ```
-
-_**Note:** The following example has been extracted from the [xenomorph](https://github.com/nuttycom/xenomorph) library, which served as an inspiration for writing this one._
