@@ -22,6 +22,7 @@ description:         Please see the README on GitHub at <https://github.com/alon
 dependencies:
 - base >= 4.7 && < 5
 - comonad >= 5.0 && < 5.1
+- contravariant
 - mtl
 - natural-transformation
 - lens
