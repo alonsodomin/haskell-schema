@@ -16,6 +16,7 @@ import           Control.Functor.HigherOrder
 import           Control.Lens                hiding (iso)
 import qualified Control.Lens                as Lens
 import           Control.Natural
+import           Data.List.NonEmpty          (NonEmpty)
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
 import           Data.Vector                 (Vector)
@@ -27,6 +28,9 @@ data FieldDef o s a = FieldDef
   , fieldSchema   :: s a
   , fieldAccessor :: Getter o a
   }
+
+contraNT :: (n -> o) -> FieldDef o s ~> FieldDef n s
+contraNT f = \(FieldDef n s g) -> FieldDef n s ((to f) . g)
 
 instance Show (s a) => Show (FieldDef o s a) where
   show f = (T.unpack $ fieldName f) ++ " :: " ++ (show $ fieldSchema f)
@@ -57,7 +61,7 @@ data SchemaF p s a where
   PrimitiveSchema :: p a -> SchemaF p s a
   SeqSchema       :: s a -> SchemaF p s (Vector a)
   RecordSchema    :: Fields s a -> SchemaF p s a
-  UnionSchema     :: [AltDef s a] -> SchemaF p s a
+  UnionSchema     :: NonEmpty (AltDef s a) -> SchemaF p s a
   AliasSchema     :: s a -> Iso' a b -> SchemaF p s b
 
 instance HFunctor (SchemaF p) where

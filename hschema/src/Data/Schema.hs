@@ -27,6 +27,7 @@ module Data.Schema
 import           Control.Applicative.Free    (Ap (Pure), liftAp)
 import           Control.Functor.HigherOrder
 import           Control.Lens
+import qualified Data.List.NonEmpty          as NEL
 import           Data.Schema.Internal.Types
 import           Data.Text                   (Text)
 import           Data.Vector                 (Vector)
@@ -78,7 +79,7 @@ list' = list ()
 
 -- | Define the schema of an union (coproduct) type based on the given alternatives
 oneOf :: ann -> [AltDef (Schema ann p) a] -> Schema ann p a
-oneOf ann alts = hcofree ann (UnionSchema alts)
+oneOf ann alts = hcofree ann (UnionSchema $ NEL.fromList alts)
 
 oneOf' :: [AltDef (Schema' p) a] -> Schema' p a
 oneOf' = oneOf ()

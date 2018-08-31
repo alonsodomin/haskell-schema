@@ -23,6 +23,8 @@ import           Control.Monad.State                       (State)
 import qualified Control.Monad.State                       as ST
 import           Control.Natural
 import           Data.Functor.Sum
+import           Data.List.NonEmpty                        (NonEmpty)
+import qualified Data.List.NonEmpty                        as NEL
 import           Data.Maybe
 import           Data.Schema.Internal.Types
 import           Data.Text.Prettyprint.Doc                 ((<+>), (<>))
@@ -50,8 +52,8 @@ layoutFields f fields = renderFields $ ST.execState (runAp fieldDoc fields) []
         renderFields [] = PP.emptyDoc
         renderFields xs = PP.nest indentAmount $ PP.line <> PP.vsep xs
 
-layoutAlts :: forall s o. (AltDef s o -> Maybe AnsiDoc) -> [AltDef s o] -> [AnsiDoc]
-layoutAlts f alts = catMaybes $ altDoc <$> alts
+layoutAlts :: forall s o. (AltDef s o -> Maybe AnsiDoc) -> NonEmpty (AltDef s o) -> [AnsiDoc]
+layoutAlts f alts = catMaybes . NEL.toList $ altDoc <$> alts
   where altDoc :: AltDef s o -> Maybe AnsiDoc
         altDoc a = (\x -> PP.indent indentAmount $ PP.pretty "-" <+> (PP.pretty $ altName a) <> x) <$> (f a)
 

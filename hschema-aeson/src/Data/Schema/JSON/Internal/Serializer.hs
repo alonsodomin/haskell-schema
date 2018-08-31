@@ -18,6 +18,8 @@ import qualified Data.Aeson.Types            as JSON
 import           Data.Functor.Sum
 import           Data.HashMap.Strict         (HashMap)
 import qualified Data.HashMap.Strict         as Map
+import           Data.List.NonEmpty          (NonEmpty)
+import qualified Data.List.NonEmpty          as NEL
 import           Data.Maybe
 import           Data.Schema.Internal.Types
 import           Data.Text                   (Text)
@@ -48,7 +50,7 @@ toJsonSerializerAlg = wrapNT $ \case
             ST.modify $ Map.insert name (serialize el)
             return el
 
-  UnionSchema alts -> JsonSerializer $ \value -> head . catMaybes $ fmap (encodeAlt value) alts
+  UnionSchema alts -> JsonSerializer $ \value -> head . catMaybes . NEL.toList $ fmap (encodeAlt value) alts
     where singleAttrObj :: Text -> JSON.Value -> JSON.Value
           singleAttrObj n v = JSON.Object $ Map.insert n v Map.empty
 
@@ -81,7 +83,7 @@ toJsonDeserializerAlg = wrapNT $ \case
     other -> fail $ "Expected JSON Object but got: " ++ (show other)
 
   UnionSchema alts -> JsonDeserializer $ \json -> case json of
-    JSON.Object obj -> head . catMaybes $ fmap lookupParser alts
+    JSON.Object obj -> head . catMaybes . NEL.toList $ fmap lookupParser alts
       where lookupParser :: AltDef JsonDeserializer a -> Maybe (JSON.Parser a)
             lookupParser (AltDef name (JsonDeserializer deserial) pr) = do
               altParser <- deserial <$> Map.lookup name obj
