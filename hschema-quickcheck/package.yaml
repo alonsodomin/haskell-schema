@@ -25,6 +25,7 @@ dependencies:
 - hschema >= 0.0.1.0 && < 0.0.2.0
 - mtl
 - natural-transformation
+- transformers
 - lens
 - free
 - QuickCheck

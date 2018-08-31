@@ -34,9 +34,13 @@ import           Data.Vector                 (Vector)
 import qualified Data.Vector                 as Vector
 import           Prelude                     hiding (const, seq)
 
--- | Define a field
+-- | Define a required field
 field :: Text -> s a -> Getter o a -> Field s o a
-field name schema getter = liftAp (FieldDef name schema getter)
+field name schema getter = liftAp (RequiredField name schema getter)
+
+-- | Define an optional field
+optional :: Text -> s a -> Getter o (Maybe a) -> Field s o a
+optional name schema getter = liftAp (OptionalField name schema getter)
 
 -- | Define an alternative
 alt :: Text -> s b -> Prism' a b -> AltDef s a

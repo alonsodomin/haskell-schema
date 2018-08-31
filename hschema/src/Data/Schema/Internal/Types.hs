@@ -23,23 +23,38 @@ import           Data.Vector                 (Vector)
 import           Prelude                     hiding (const, seq)
 
 -- | Metadata for a field of type `a`, belonging to the data type `o` and based on schema `s`
-data FieldDef o s a = FieldDef
-  { fieldName     :: Text
-  , fieldSchema   :: s a
-  , fieldAccessor :: Getter o a
-  }
+data FieldDef o s a =
+    RequiredField Text (s a) (Getter o a)
+  | OptionalField Text (s a) (Getter o (Maybe a))
+  -- { fieldName     :: Text
+  -- , fieldSchema   :: s a
+  -- , fieldAccessor :: Getter o a
+  -- }
 
-contraNT :: (n -> o) -> FieldDef o s ~> FieldDef n s
-contraNT f = \(FieldDef n s g) -> FieldDef n s ((to f) . g)
+fieldName :: FieldDef o s a -> Text
+fieldName (RequiredField name _ _) = name
+fieldName (OptionalField name _ _) = name
+
+fieldSchema :: FieldDef o s a -> s a
+fieldSchema (RequiredField _ s _) = s
+fieldSchema (OptionalField _ s _) = s
+
+-- contraNT :: (n -> o) -> FieldDef o s ~> FieldDef n s
+-- contraNT f = \case
+--   RequiredField n s g -> RequiredField n s ((to f) . g)
+--   OptionalField n s g -> OptionalField n s ((to f) . g)
 
 instance Show (s a) => Show (FieldDef o s a) where
-  show f = (T.unpack $ fieldName f) ++ " :: " ++ (show $ fieldSchema f)
+  show field = (T.unpack $ fieldName field) ++ " :: " ++ (show $ fieldSchema field)
 
 instance Functor s => Functor (FieldDef o s) where
-  fmap f (FieldDef name s acc) = FieldDef name (fmap f s) (acc . (to f))
+  fmap f (RequiredField name s acc) = RequiredField name (fmap f s) (acc . (to f))
+  fmap f (OptionalField name s acc) = OptionalField name (fmap f s) (acc . (to $ fmap f))
 
 instance HFunctor (FieldDef o) where
-  hfmap nt = \(FieldDef name s acc) -> FieldDef name (nt s) acc
+  hfmap nt = \case
+    RequiredField name s acc -> RequiredField name (nt s) acc
+    OptionalField name s acc -> OptionalField name (nt s) acc
 
 -- | The type of a field of type `a`, belonging to the data type `o` and based on schema `s`
 type Field s o a = Ap (FieldDef o s) a

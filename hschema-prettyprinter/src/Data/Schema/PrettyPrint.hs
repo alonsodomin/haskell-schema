@@ -72,7 +72,7 @@ toSchemaDocAlg = wrapNT $ \case
   SeqSchema elemDoc   -> SchemaDoc $ doubleColon <+> PP.vsep [PP.lbracket, getDoc elemDoc, PP.rbracket]
   RecordSchema fields -> SchemaDoc $ layoutFields fieldDoc' fields
     where fieldDoc' :: FieldDef o SchemaDoc v -> AnsiDoc
-          fieldDoc' (FieldDef _ schemaDoc _) = getDoc schemaDoc
+          fieldDoc' field = getDoc $ fieldSchema field
   UnionSchema alts -> SchemaDoc $ PP.vsep $ layoutAlts altDoc' alts
     where altDoc' :: AltDef SchemaDoc a -> Maybe AnsiDoc
           altDoc' (AltDef _ (SchemaDoc doc) _) = Just doc
@@ -102,9 +102,11 @@ toSchemaLayoutAlg = wrapNT $ \case
   SeqSchema elemLay   -> SchemaLayout $ \xs -> PP.colon <> PP.line <> PP.indent indentAmount (PP.vsep $ Vector.toList $ fmap (runSchemaLayout elemLay) xs)
   RecordSchema fields -> SchemaLayout $ \rc -> layoutFields (fieldDocOf rc) fields
     where fieldDocOf :: o -> FieldDef o SchemaLayout v -> AnsiDoc
-          fieldDocOf obj (FieldDef _ (SchemaLayout layout) getter) =
-            let el = view getter obj
-            in layout el
+          fieldDocOf obj field =
+            let layout = runSchemaLayout (fieldSchema field)
+            in case field of
+                  RequiredField _ _ getter -> layout $ view getter obj
+                  OptionalField _ _ getter -> maybe PP.emptyDoc layout $ view getter obj
   UnionSchema alts -> SchemaLayout $ \value -> head $ layoutAlts (layoutAlt' value) alts
     where layoutAlt' :: o -> AltDef SchemaLayout o -> Maybe AnsiDoc
           layoutAlt' obj (AltDef _ (SchemaLayout layout) getter) = layout <$> obj ^? getter
