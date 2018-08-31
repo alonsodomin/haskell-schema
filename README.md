@@ -40,8 +40,6 @@ In the following example we are going to make use of all those packages.
 
 ### Example
 
-_**Note:** The following example has been extracted from the [xenomorph](https://github.com/nuttycom/xenomorph) library, which served as an inspiration for writing this one._
-
 Let's start by defining a some data types alongside some lenses:
 
 ```haskell
@@ -157,5 +155,5 @@ pprintPerson = prettyPrinter personSchema
 
 ## Credits
 
-All thanks to [Kris Nuttycombe](https://github.com/nuttycom) for his excellent work in `xenomorph`, this project would be much
-  harder to implement without his initial work.
+All thanks to [Kris Nuttycombe](https://github.com/nuttycom) for his excellent work in `xenomorph`, this project would be have
+  been impossible without his work.
