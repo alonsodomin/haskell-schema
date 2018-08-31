@@ -2,7 +2,8 @@ name:                hschema
 version:             0.0.1.0
 category:            Data,Schema
 github:              "alonsodomin/haskell-schema"
-license:             BSD3
+license:             LGPL 3
+license-file:        LICENSE
 author:              "Antonio Alonso Dominguez"
 maintainer:          "alonso.domin@gmail.com"
 copyright:           "2018 Antonio Alonso Dominguez"
