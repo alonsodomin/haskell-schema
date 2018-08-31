@@ -2,8 +2,13 @@
 
 [![Build Status](https://travis-ci.org/alonsodomin/haskell-schema.svg?branch=master)](https://travis-ci.org/alonsodomin/haskell-schema)
 
-This is a library inspired by (and an attempt to write a Haskell version of) [xenomorph](https://github.com/nuttycom/xenomorph),
-  a Scala library for describing data.
+Haskell Schema (or `hschema`) is a library with the purpose of describing data (or domains) and use that information to automatically
+  derive serialization codecs (JSON, binary, etc.), arbitrary generators, pretty printers and much more. It is heavily inspired by
+  the Scala library [xenomorph](https://github.com/nuttycom/xenomorph) (in fact, it is a port of the same ideas), which was introduced
+  in the following talk at Scala World 2017:
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=oRLkb6mqvVM" target="_blank"><img src="http://img.youtube.com/vi/oRLkb6mqvVM/0.jpg" 
+alt="Describing Data...with free applicative functors (and more)—Kris Nuttycombe" width="240" height="180" border="10" /></a>
 
 ## Motivation
 
@@ -107,7 +112,7 @@ roleSchema = S.oneOf'
 ```
 
 Once you have defined the schema, by proving an instance for the `HasSchema` typeclass,
- you'll get JSON decoders, encoders, generators, etc. for free right away.
+  you'll get JSON decoders, encoders, generators, etc. for free right away.
 
 ```haskell
 import Data.Schema (HasSchema(..))
@@ -143,9 +148,14 @@ That will produce an output similar to the following:
 ```
 
 Not happy with that? What about a pretty printer based on the given schema? Just use the `prettyPrinter` function, which will
-return you a `a -> IO ()` function that you can use to print your data types:
+  return you a `a -> IO ()` function that you can use to print your data types:
 
 ```haskell
 pprintPerson :: Person -> IO ()
 pprintPerson = prettyPrinter personSchema
 ```
+
+## Credits
+
+All thanks to [Kris Nuttycombe](https://github.com/nuttycom) for his excellent work in `xenomorph`, this project would be much
+  harder to implement without his initial work.
