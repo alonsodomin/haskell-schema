@@ -69,6 +69,7 @@ instance (ToSchemaDoc p, ToSchemaDoc q) => ToSchemaDoc (Sum p q) where
 toSchemaDocAlg :: ToSchemaDoc s => HAlgebra (SchemaF s) SchemaDoc
 toSchemaDocAlg = wrapNT $ \case
   PrimitiveSchema p   -> SchemaDoc $ doubleColon <+> (getDoc $ toSchemaDoc p)
+  OptSchema base      -> SchemaDoc $ PP.pretty "?" <> (getDoc base)
   SeqSchema elemDoc   -> SchemaDoc $ doubleColon <+> PP.vsep [PP.lbracket, getDoc elemDoc, PP.rbracket]
   RecordSchema fields -> SchemaDoc $ layoutFields fieldDoc' fields
     where fieldDoc' :: FieldDef o SchemaDoc v -> AnsiDoc
@@ -98,7 +99,8 @@ instance (ToSchemaLayout p, ToSchemaLayout q) => ToSchemaLayout (Sum p q) where
 
 toSchemaLayoutAlg :: ToSchemaLayout s => HAlgebra (SchemaF s) SchemaLayout
 toSchemaLayoutAlg = wrapNT $ \case
-  PrimitiveSchema p   -> SchemaLayout $ \x  -> PP.colon <+> runSchemaLayout (toSchemaLayout p) x
+  PrimitiveSchema p   -> SchemaLayout $ \x -> PP.colon <+> runSchemaLayout (toSchemaLayout p) x
+  OptSchema base      -> SchemaLayout $ \x -> maybe PP.emptyDoc (runSchemaLayout base) x
   SeqSchema elemLay   -> SchemaLayout $ \xs -> PP.colon <> PP.line <> PP.indent indentAmount (PP.vsep $ Vector.toList $ fmap (runSchemaLayout elemLay) xs)
   RecordSchema fields -> SchemaLayout $ \rc -> layoutFields (fieldDocOf rc) fields
     where fieldDocOf :: o -> FieldDef o SchemaLayout v -> AnsiDoc

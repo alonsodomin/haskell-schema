@@ -14,6 +14,8 @@ module Data.Schema
      , const'
      , record
      , record'
+     , opt
+     , opt'
      , seq
      , seq'
      , list
@@ -48,6 +50,12 @@ prim ann primAlg = hcofree ann $ PrimitiveSchema primAlg
 
 prim' :: p a -> Schema' p a
 prim' = prim ()
+
+opt :: ann -> Schema ann p a -> Schema ann p (Maybe a)
+opt ann base = hcofree ann (OptSchema base)
+
+opt' :: Schema' p a -> Schema' p (Maybe a)
+opt' = opt ()
 
 -- | Define a schema for a type that is always constant
 const :: ann -> a -> Schema ann p a

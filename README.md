@@ -70,7 +70,7 @@ _AdminRole = prism' AdminRole $ \case
     AdminRole x -> Just x
     _           -> Nothing
 
-data Person = Person { personName :: String, personAge :: Int, personRoles :: [Role] }
+data Person = Person { personName :: String, birthDate :: Maybe Int, roles :: [Role] }
   deriving (Eq, Show)
 ```
 
@@ -86,9 +86,9 @@ import qualified Data.Schema.JSON.Simple as JSON
 personSchema :: JsonSchema Person
 personSchema = S.record'
              ( Person
-             <$> S.field "name"  JSON.string          (to personName)
-             <*> S.field "age"   JSON.int             (to personAge)
-             <*> S.field "roles" (S.list' roleSchema) (to personRoles)
+             <$> S.field "name"      JSON.string          (to personName)
+             <*> S.field "birthDate" (S.opt' JSON.int)    (to birthDate)
+             <*> S.field "roles"     (S.list' roleSchema) (to roles)
              )
 ```
 
@@ -141,7 +141,7 @@ That will produce an output similar to the following:
     * subordinateCount :: Number
     * department :: Text
 ]
-* birthDate :: Number
+* birthDate ?:: Number
 * name :: Text
 ```
 
