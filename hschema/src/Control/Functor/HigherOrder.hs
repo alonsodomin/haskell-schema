@@ -28,7 +28,10 @@ data HEnvT
   (i :: *) = HEnvT { hask :: !e, hlocal :: f g i }
 
 instance HFunctor f => HFunctor (HEnvT f a) where
-  hfmap nt = \fm -> HEnvT (hask fm) ((hfmap nt) (hlocal fm))
+  hfmap nt = \fa -> HEnvT (hask fa) ((hfmap nt) (hlocal fa))
+
+instance Functor (f g) => Functor (HEnvT f e g) where
+  fmap f env = HEnvT (hask env) (fmap f (hlocal env))
 
 type HCofree
   (f :: ((* -> *) -> * -> *))
