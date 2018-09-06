@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE Rank2Types           #-}

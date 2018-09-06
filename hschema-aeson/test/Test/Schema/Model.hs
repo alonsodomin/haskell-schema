@@ -48,14 +48,14 @@ roleSchema = S.oneOf'
            , S.alt "admin" adminRole            _AdminRole
            ]
 
-data Person = Person { personName :: String, birthDate :: Int, roles :: [Role] }
+data Person = Person { personName :: String, birthDate :: Maybe Int, roles :: [Role] }
   deriving (Eq, Show)
 
 personSchema :: JsonSchema Person
 personSchema = S.record'
              ( Person
              <$> S.field "name"      JSON.string          (to personName)
-             <*> S.field "birthDate" JSON.int             (to birthDate)
+             <*> S.field "birthDate" (S.opt' JSON.int)    (to birthDate)
              <*> S.field "roles"     (S.list' roleSchema) (to roles)
              )
 
