@@ -24,11 +24,13 @@ dependencies:
 - base >= 4.7 && < 5
 - comonad >= 5.0 && < 5.1
 - contravariant
+- hashable
 - mtl
 - natural-transformation
 - lens
 - free
 - text
+- unordered-containers
 - vector
 
 library:

@@ -20,6 +20,8 @@ module Data.Schema
      , seq'
      , list
      , list'
+     , hash
+     , hash'
      , oneOf
      , oneOf'
      , alias
@@ -29,6 +31,8 @@ module Data.Schema
 import           Control.Applicative.Free    (Ap (Pure), liftAp)
 import           Control.Functor.HigherOrder
 import           Control.Lens
+import           Data.Hashable               (Hashable)
+import           Data.HashMap.Strict         (HashMap)
 import qualified Data.List.NonEmpty          as NEL
 import           Data.Schema.Internal.Types
 import           Data.Text                   (Text)
@@ -84,6 +88,12 @@ list ann elemSchema = alias ann (seq ann elemSchema) (iso Vector.toList Vector.f
 
 list' :: Schema' p a -> Schema' p [a]
 list' = list ()
+
+hash :: Hashable k => ann -> Schema ann p k -> Schema ann p a -> Schema ann p (HashMap k a)
+hash ann keySchema elemSchema = hcofree ann (HashSchema keySchema elemSchema)
+
+hash' :: Hashable k => Schema' p k -> Schema' p a -> Schema' p (HashMap k a)
+hash' = hash ()
 
 -- | Define the schema of an union (coproduct) type based on the given alternatives
 oneOf :: ann -> [AltDef (Schema ann p) a] -> Schema ann p a

@@ -16,6 +16,8 @@ import           Control.Functor.HigherOrder
 import           Control.Lens                hiding (iso)
 import qualified Control.Lens                as Lens
 import           Control.Natural
+import           Data.Hashable
+import           Data.HashMap.Strict         (HashMap)
 import           Data.List.NonEmpty          (NonEmpty)
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
@@ -61,18 +63,20 @@ data SchemaF p s a where
   PrimitiveSchema :: p a -> SchemaF p s a
   OptSchema       :: s a -> SchemaF p s (Maybe a)
   SeqSchema       :: s a -> SchemaF p s (Vector a)
+  HashSchema      :: Hashable k => s k -> s a -> SchemaF p s (HashMap k a)
   RecordSchema    :: Fields s a -> SchemaF p s a
   UnionSchema     :: NonEmpty (AltDef s a) -> SchemaF p s a
   AliasSchema     :: s a -> Iso' a b -> SchemaF p s b
 
 instance HFunctor (SchemaF p) where
   hfmap nt = \case
-    PrimitiveSchema p    -> PrimitiveSchema p
-    OptSchema base       -> OptSchema $ nt base
-    SeqSchema elemSch    -> SeqSchema $ nt elemSch
-    RecordSchema fields  -> RecordSchema $ hoistAp (hfmap nt) fields
-    UnionSchema alts     -> UnionSchema $ fmap (hfmap nt) alts
-    AliasSchema base iso -> AliasSchema (nt base) iso
+    PrimitiveSchema p         -> PrimitiveSchema p
+    OptSchema base            -> OptSchema $ nt base
+    SeqSchema elemSch         -> SeqSchema $ nt elemSch
+    HashSchema keySch elemSch -> HashSchema (nt keySch) (nt elemSch)
+    RecordSchema fields       -> RecordSchema $ hoistAp (hfmap nt) fields
+    UnionSchema alts          -> UnionSchema $ fmap (hfmap nt) alts
+    AliasSchema base iso      -> AliasSchema (nt base) iso
 
 -- | Perform a natural transformation of the primitive algebra of the Schema
 pfmap :: (p ~> q) -> SchemaF p s a -> SchemaF q s a
@@ -80,6 +84,7 @@ pfmap nt = \case
   PrimitiveSchema p    -> PrimitiveSchema (nt p)
   OptSchema base       -> OptSchema base
   SeqSchema elemSch    -> SeqSchema elemSch
+  HashSchema key el    -> HashSchema key el
   RecordSchema fields  -> RecordSchema fields
   UnionSchema alts     -> UnionSchema alts
   AliasSchema base iso -> AliasSchema base iso
