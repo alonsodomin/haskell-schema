@@ -89,10 +89,10 @@ list ann elemSchema = alias ann (seq ann elemSchema) (iso Vector.toList Vector.f
 list' :: Schema' p a -> Schema' p [a]
 list' = list ()
 
-hash :: Hashable k => ann -> Schema ann p k -> Schema ann p a -> Schema ann p (HashMap k a)
+hash :: (Hashable k, Eq k) => ann -> Schema ann p k -> Schema ann p a -> Schema ann p (HashMap k a)
 hash ann keySchema elemSchema = hcofree ann (HashSchema keySchema elemSchema)
 
-hash' :: Hashable k => Schema' p k -> Schema' p a -> Schema' p (HashMap k a)
+hash' :: (Hashable k, Eq k) => Schema' p k -> Schema' p a -> Schema' p (HashMap k a)
 hash' = hash ()
 
 -- | Define the schema of an union (coproduct) type based on the given alternatives

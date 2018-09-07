@@ -63,7 +63,7 @@ data SchemaF p s a where
   PrimitiveSchema :: p a -> SchemaF p s a
   OptSchema       :: s a -> SchemaF p s (Maybe a)
   SeqSchema       :: s a -> SchemaF p s (Vector a)
-  HashSchema      :: Hashable k => s k -> s a -> SchemaF p s (HashMap k a)
+  HashSchema      :: (Hashable k, Eq k) => s k -> s a -> SchemaF p s (HashMap k a)
   RecordSchema    :: Fields s a -> SchemaF p s a
   UnionSchema     :: NonEmpty (AltDef s a) -> SchemaF p s a
   AliasSchema     :: s a -> Iso' a b -> SchemaF p s b

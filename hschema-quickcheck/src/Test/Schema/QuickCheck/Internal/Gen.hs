@@ -10,12 +10,14 @@ module Test.Schema.QuickCheck.Internal.Gen
      ( ToGen (..)
      ) where
 
+import           Control.Applicative         (liftA2)
 import           Control.Applicative.Free
 import           Control.Functor.HigherOrder
 import           Control.Lens
 import           Control.Monad               (liftM)
 import           Control.Natural
 import           Data.Functor.Sum
+import qualified Data.HashMap.Strict         as Map
 import qualified Data.List.NonEmpty          as NEL
 import           Data.Schema.Internal.Types
 import qualified Data.Vector                 as Vector
@@ -37,6 +39,7 @@ genAlg = wrapNT $ \case
   PrimitiveSchema p    -> toGen p
   SeqSchema elemSchema -> Vector.fromList <$> Gen.listOf elemSchema
   OptSchema base       -> optional base
+  HashSchema key el    -> Map.fromList <$> (Gen.listOf $ liftA2 ((,)) key el)
   RecordSchema fields  -> runAp fieldSchema fields
   UnionSchema alts     -> Gen.oneof . NEL.toList $ fmap genAlt alts
     where genAlt :: AltDef Gen a -> Gen a

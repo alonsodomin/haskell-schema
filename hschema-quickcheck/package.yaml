@@ -30,6 +30,7 @@ dependencies:
 - QuickCheck
 - quickcheck-instances
 - text
+- unordered-containers
 - vector
 
 library:
