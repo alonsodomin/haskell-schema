@@ -22,6 +22,7 @@ description:         Please see the README on GitHub at <https://github.com/alon
 
 dependencies:
 - base >= 4.7 && < 5
+- contravariant
 - hschema >= 0.0.1.0 && < 0.0.2.0
 - mtl
 - natural-transformation
@@ -30,6 +31,7 @@ dependencies:
 - prettyprinter
 - prettyprinter-ansi-terminal
 - text
+- unordered-containers
 - vector
 
 library:

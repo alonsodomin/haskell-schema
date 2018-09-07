@@ -22,7 +22,10 @@ import           Control.Lens                              hiding (iso)
 import           Control.Monad.State                       (State)
 import qualified Control.Monad.State                       as ST
 import           Control.Natural
+import           Data.Functor.Contravariant
+import           Data.Functor.Contravariant.Divisible
 import           Data.Functor.Sum
+import qualified Data.HashMap.Strict                       as Map
 import           Data.List.NonEmpty                        (NonEmpty)
 import qualified Data.List.NonEmpty                        as NEL
 import           Data.Maybe
@@ -71,6 +74,7 @@ toSchemaDocAlg = wrapNT $ \case
   PrimitiveSchema p   -> SchemaDoc $ doubleColon <+> (getDoc $ toSchemaDoc p)
   OptSchema base      -> SchemaDoc $ PP.pretty "?" <> (getDoc base)
   SeqSchema elemDoc   -> SchemaDoc $ doubleColon <+> PP.vsep [PP.lbracket, getDoc elemDoc, PP.rbracket]
+  HashSchema key el   -> SchemaDoc $ doubleColon <+> PP.pretty "{" <+> getDoc key <+> PP.pretty "->" <+> getDoc el <+> PP.pretty "}"
   RecordSchema fields -> SchemaDoc $ layoutFields fieldDoc' fields
     where fieldDoc' :: FieldDef o SchemaDoc v -> AnsiDoc
           fieldDoc' (FieldDef _ schemaDoc _) = getDoc schemaDoc
@@ -90,6 +94,17 @@ putSchema schema = do
 
 newtype SchemaLayout a = SchemaLayout { runSchemaLayout :: a -> AnsiDoc }
 
+instance Contravariant SchemaLayout where
+  contramap f (SchemaLayout g) = SchemaLayout $ g . f
+
+instance Divisible SchemaLayout where
+  conquer = SchemaLayout $ const PP.emptyDoc
+  divide split leftLayout rightLayout = SchemaLayout $ \x ->
+    let (left, right) = split x
+        leftDoc       = runSchemaLayout leftLayout left
+        rightDoc      = runSchemaLayout rightLayout right
+    in leftDoc <+> PP.pretty "->" <+> rightDoc
+
 class ToSchemaLayout s where
   toSchemaLayout :: s ~> SchemaLayout
 
@@ -99,10 +114,14 @@ instance (ToSchemaLayout p, ToSchemaLayout q) => ToSchemaLayout (Sum p q) where
 
 toSchemaLayoutAlg :: ToSchemaLayout s => HAlgebra (SchemaF s) SchemaLayout
 toSchemaLayoutAlg = wrapNT $ \case
-  PrimitiveSchema p   -> SchemaLayout $ \x -> PP.colon <+> runSchemaLayout (toSchemaLayout p) x
-  OptSchema base      -> SchemaLayout $ \x -> maybe PP.emptyDoc (runSchemaLayout base) x
-  SeqSchema elemLay   -> SchemaLayout $ \xs -> PP.colon <> PP.line <> PP.indent indentAmount (PP.vsep $ Vector.toList $ fmap (runSchemaLayout elemLay) xs)
-  RecordSchema fields -> SchemaLayout $ \rc -> layoutFields (fieldDocOf rc) fields
+  PrimitiveSchema p   -> SchemaLayout $ \x   -> PP.colon <+> runSchemaLayout (toSchemaLayout p) x
+  OptSchema base      -> SchemaLayout $ \x   -> maybe PP.emptyDoc (runSchemaLayout base) x
+  SeqSchema elemLay   -> SchemaLayout $ \xs  ->
+    PP.colon <> PP.line <> PP.indent indentAmount (PP.vsep $ Vector.toList $ fmap (runSchemaLayout elemLay) xs)
+  HashSchema key el   -> SchemaLayout $ \xxs ->
+    let pairLayout = runSchemaLayout $ divided key el
+    in PP.colon <> PP.line <> PP.indent indentAmount (PP.vsep $ fmap pairLayout (Map.toList xxs))
+  RecordSchema fields -> SchemaLayout $ \rc  -> layoutFields (fieldDocOf rc) fields
     where fieldDocOf :: o -> FieldDef o SchemaLayout v -> AnsiDoc
           fieldDocOf obj (FieldDef _ (SchemaLayout layout) getter) =
             let el = view getter obj
