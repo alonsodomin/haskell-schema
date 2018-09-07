@@ -16,6 +16,7 @@ import qualified Control.Monad.State         as ST
 import           Control.Natural
 import qualified Data.Aeson.Types            as JSON
 import           Data.Functor.Sum
+import           Data.Functor.Contravariant
 import           Data.HashMap.Strict         (HashMap)
 import qualified Data.HashMap.Strict         as Map
 import           Data.List.NonEmpty          (NonEmpty)
@@ -24,8 +25,19 @@ import           Data.Maybe
 import           Data.Schema.Internal.Types
 import           Data.Text                   (Text)
 
-newtype JsonSerializer a   = JsonSerializer { runJsonSerializer :: a -> JSON.Value }
+newtype JsonSerializer a = JsonSerializer { runJsonSerializer :: a -> JSON.Value }
+
+instance Contravariant JsonSerializer where
+  contramap f (JsonSerializer g) = JsonSerializer $ g . f
+ 
 newtype JsonDeserializer a = JsonDeserializer { runJsonDeserializer :: JSON.Value -> JSON.Parser a }
+
+instance Functor JsonDeserializer where
+  fmap f (JsonDeserializer g) = JsonDeserializer $ \x -> fmap f (g x)
+
+instance Applicative JsonDeserializer where
+  pure x = JsonDeserializer $ \_ -> pure x
+  (JsonDeserializer l) <*> (JsonDeserializer r) = JsonDeserializer $ \x -> (l x) <*> (r x)
 
 class ToJsonSerializer s where
   toJsonSerializer :: s ~> JsonSerializer
@@ -45,7 +57,7 @@ toJsonSerializerAlg = wrapNT $ \case
 
   SeqSchema serializer -> JsonSerializer $ \vec -> JSON.Array $ fmap (runJsonSerializer serializer) vec
 
-  RecordSchema fields -> JsonSerializer $ \obj -> JSON.Object $ ST.execState (runAp (encodeFieldOf obj) fields) Map.empty
+  RecordSchema fields -> JsonSerializer $ \obj -> JSON.Object $ ST.execState (runAp (encodeFieldOf obj) (toFieldAp fields)) Map.empty
     where encodeFieldOf :: o -> FieldDef o JsonSerializer v -> State (HashMap Text JSON.Value) v
           encodeFieldOf o (FieldDef name (JsonSerializer serialize) getter) = do
             let el = view getter o
@@ -83,7 +95,7 @@ toJsonDeserializerAlg = wrapNT $ \case
     other        -> fail $ "Expected a JSON array but got: " ++ (show other)
 
   RecordSchema fields -> JsonDeserializer $ \json -> case json of
-    JSON.Object obj -> runAp decodeField fields
+    JSON.Object obj -> runAp decodeField $ unwrapFields fields
       where decodeField :: FieldDef o JsonDeserializer v -> JSON.Parser v
             decodeField (FieldDef name (JsonDeserializer deserial) _) = JSON.explicitParseField deserial obj name
     other -> fail $ "Expected JSON Object but got: " ++ (show other)

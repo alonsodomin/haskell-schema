@@ -28,7 +28,6 @@ module Data.Schema
      , alias'
      ) where
 
-import           Control.Applicative.Free    (Ap (Pure), liftAp)
 import           Control.Functor.HigherOrder
 import           Control.Lens
 import           Data.Hashable               (Hashable)
@@ -39,10 +38,6 @@ import           Data.Text                   (Text)
 import           Data.Vector                 (Vector)
 import qualified Data.Vector                 as Vector
 import           Prelude                     hiding (const, seq)
-
--- | Define a field
-field :: Text -> s a -> Getter o a -> Field s o a
-field name schema getter = liftAp (FieldDef name schema getter)
 
 -- | Define an alternative
 alt :: Text -> s b -> Prism' a b -> AltDef s a
@@ -63,7 +58,7 @@ opt' = opt ()
 
 -- | Define a schema for a type that is always constant
 const :: ann -> a -> Schema ann p a
-const ann a = hcofree ann (RecordSchema $ Pure a)
+const ann a = hcofree ann (RecordSchema $ pure a)
 
 const' :: a -> Schema' p a
 const' = const ()

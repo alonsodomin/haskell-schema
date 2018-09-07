@@ -28,6 +28,8 @@ data HEnvT
   (g :: (* -> *))
   (i :: *) = HEnvT { hask :: !e, hlocal :: f g i }
 
+newtype HMutu f g a = HMutu { unmutu :: f (g (HMutu f g)) a }
+
 instance HFunctor f => HFunctor (HEnvT f a) where
   hfmap nt = \fa -> HEnvT (hask fa) ((hfmap nt) (hlocal fa))
 

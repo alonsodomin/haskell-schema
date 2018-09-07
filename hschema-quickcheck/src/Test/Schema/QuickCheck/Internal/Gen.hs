@@ -36,15 +36,15 @@ instance (ToGen p, ToGen q) => ToGen (Sum p q) where
 
 genAlg :: ToGen p => HAlgebra (SchemaF p) Gen
 genAlg = wrapNT $ \case
-  PrimitiveSchema p    -> toGen p
-  SeqSchema elemSchema -> Vector.fromList <$> Gen.listOf elemSchema
-  OptSchema base       -> optional base
-  HashSchema key el    -> Map.fromList <$> (Gen.listOf $ liftA2 ((,)) key el)
-  RecordSchema fields  -> runAp fieldSchema fields
-  UnionSchema alts     -> Gen.oneof . NEL.toList $ fmap genAlt alts
+  PrimitiveSchema p         -> toGen p
+  SeqSchema elemSchema      -> Vector.fromList <$> Gen.listOf elemSchema
+  OptSchema base            -> optional base
+  HashSchema key el         -> Map.fromList <$> (Gen.listOf $ liftA2 ((,)) key el)
+  RecordSchema (Field flds) -> runAp fieldSchema flds
+  UnionSchema alts          -> Gen.oneof . NEL.toList $ fmap genAlt alts
     where genAlt :: AltDef Gen a -> Gen a
           genAlt (AltDef _ genSingle pr) = (view $ re pr) <$> genSingle
-  AliasSchema base iso -> view iso <$> base
+  AliasSchema base iso      -> view iso <$> base
 
 instance ToGen s => ToGen (Schema ann s) where
   toGen schema = (cataNT genAlg) (hforget schema)

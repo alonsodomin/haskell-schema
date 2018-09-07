@@ -29,6 +29,7 @@ dependencies:
 - natural-transformation
 - lens
 - free
+- profunctors
 - text
 - unordered-containers
 - vector

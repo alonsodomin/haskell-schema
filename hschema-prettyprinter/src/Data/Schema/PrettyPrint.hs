@@ -44,7 +44,7 @@ doubleColon :: AnsiDoc
 doubleColon = PP.colon <> PP.colon
 
 layoutFields :: forall o s. (forall v. FieldDef o s v -> AnsiDoc) -> Fields s o -> AnsiDoc
-layoutFields f fields = renderFields $ ST.execState (runAp fieldDoc fields) []
+layoutFields f fields = renderFields $ ST.execState (runAp fieldDoc $ unwrapFields fields) []
   where fieldDoc :: FieldDef o s v -> State [AnsiDoc] v
         fieldDoc fld = do
           fieldDesc <- pure $ PP.pretty "*" <+> (PP.pretty $ fieldName fld) <+> (f fld)
@@ -61,6 +61,10 @@ layoutAlts f alts = catMaybes . NEL.toList $ altDoc <$> alts
         altDoc a = (\x -> PP.indent indentAmount $ PP.pretty "-" <+> (PP.pretty $ altName a) <> x) <$> (f a)
 
 newtype SchemaDoc a = SchemaDoc { getDoc :: AnsiDoc } deriving Functor
+
+instance Applicative SchemaDoc where
+  pure _ = SchemaDoc $ PP.emptyDoc
+  (SchemaDoc l) <*> (SchemaDoc r) = SchemaDoc $ l <> r
 
 class ToSchemaDoc s where
   toSchemaDoc :: s ~> SchemaDoc

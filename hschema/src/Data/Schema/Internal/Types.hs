@@ -17,6 +17,7 @@ import           Control.Lens                hiding (iso)
 import qualified Control.Lens                as Lens
 import           Control.Natural
 import           Data.Hashable
+import Data.Profunctor
 import           Data.HashMap.Strict         (HashMap)
 import           Data.List.NonEmpty          (NonEmpty)
 import           Data.Text                   (Text)
@@ -25,28 +26,63 @@ import           Data.Vector                 (Vector)
 import           Prelude                     hiding (const, seq)
 
 -- | Metadata for a field of type `a`, belonging to the data type `o` and based on schema `s`
-data FieldDef o s a = FieldDef
-  { fieldName     :: Text
-  , fieldSchema   :: s a
-  , fieldAccessor :: Getter o a
-  }
+data FieldDef o s a where
+  RequiredField :: Text -> s a -> Getter o a -> FieldDef o s a
+  OptionalField :: Text -> s a -> Getter o (Maybe a) -> FieldDef o s (Maybe a)
+  -- = FieldDef
+  -- { fieldName     :: Text
+  -- , fieldSchema   :: s a
+  -- , fieldAccessor :: Getter o a
+  -- }
 
-contraNT :: (n -> o) -> FieldDef o s ~> FieldDef n s
-contraNT f = \(FieldDef n s g) -> FieldDef n s ((to f) . g)
+fieldName :: FieldDef o s a -> Text
+fieldName (RequiredField name _ _) = name
+fieldName (OptionalField name _ _) = name
 
-instance Show (s a) => Show (FieldDef o s a) where
-  show f = (T.unpack $ fieldName f) ++ " :: " ++ (show $ fieldSchema f)
+-- fieldSchema :: FieldDef o s a -> s a
+-- fieldSchema (RequiredField _ schema _) = schema
+-- fieldSchema (OptionalField _ schema _) = schema
+
+readField :: FieldDef o s a -> o -> a
+readField (RequiredField _ _ getter) o = o ^. getter
+readField (OptionalField _ _ getter) o = o ^. getter
+
+getterF :: Functor f => (a -> b) -> Getter (f a) (f b)
+getterF f = to (fmap f)
 
 instance Functor s => Functor (FieldDef o s) where
-  fmap f (FieldDef name s acc) = FieldDef name (fmap f s) (acc . (to f))
+  fmap f = \case
+    RequiredField name s acc -> RequiredField name (fmap f s) (acc . (to f))
+    OptionalField name s acc -> OptionalField name s acc
 
 instance HFunctor (FieldDef o) where
-  hfmap nt = \(FieldDef name s acc) -> FieldDef name (nt s) acc
+  hfmap nt = \case
+    RequiredField name s acc -> RequiredField name (nt s) acc
+    OptionalField name s acc -> OptionalField name (nt s) acc
 
 -- | The type of a field of type `a`, belonging to the data type `o` and based on schema `s`
-type Field s o a = Ap (FieldDef o s) a
+newtype Field s o a = Field { toFieldAp :: Ap (FieldDef o s) a }
 -- | The set of fields for the data type `o` based on schema `s`
 type Fields s o = Field s o o
+
+instance Functor (Field s o) where
+  fmap f (Field x) = Field $ fmap f x
+
+instance Applicative (Field s o) where
+  pure x = Field $ Pure x
+  (Field x) <*> (Field y) = Field (x <*> y)
+
+instance Profunctor (Field s) where
+  lmap f (Field x) = Field $ hoistAp (contraNT f) x
+    where contraNT :: (n -> o) -> FieldDef o s ~> FieldDef n s
+          contraNT f = \case
+            RequiredField n s g -> RequiredField n s ((to f) . g)
+            OptionalField n s g -> OptionalField n s ((to f) . g)
+  rmap = fmap
+
+-- | Define a field
+field :: Text -> s a -> Getter o a -> Field s o a
+field name schema getter = Field $ liftAp (RequiredField name schema getter)
 
 -- | Metadata for an alternative of type `a` based on schema `s`
 data AltDef s a = forall b. AltDef
@@ -74,7 +110,7 @@ instance HFunctor (SchemaF p) where
     OptSchema base            -> OptSchema $ nt base
     SeqSchema elemSch         -> SeqSchema $ nt elemSch
     HashSchema keySch elemSch -> HashSchema (nt keySch) (nt elemSch)
-    RecordSchema fields       -> RecordSchema $ hoistAp (hfmap nt) fields
+    RecordSchema (Field flds) -> RecordSchema . Field $ hoistAp (hfmap nt) flds
     UnionSchema alts          -> UnionSchema $ fmap (hfmap nt) alts
     AliasSchema base iso      -> AliasSchema (nt base) iso
 

@@ -22,6 +22,7 @@ description:         Please see the README on GitHub at <https://github.com/alon
 
 dependencies:
 - aeson
+- contravariant
 - hschema >= 0.0.1.0 && < 0.0.2.0
 - hschema-prettyprinter >= 0.0.1.0 && < 0.0.2.0
 - hschema-quickcheck >= 0.0.1.0 && < 0.0.2.0
