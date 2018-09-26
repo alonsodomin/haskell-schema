@@ -5,6 +5,8 @@
 module Data.Schema.JSON.Simple where
 
 import           Control.Lens
+import Control.Functor.HigherOrder
+import           Data.HashMap.Strict             (HashMap)
 import           Data.Schema
 import           Data.Schema.JSON.Internal.Types
 import           Data.Scientific
@@ -12,7 +14,10 @@ import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 
 -- | Simple JSON schema type
-type JsonSchema a = Schema' JsonPrimitive a
+type JsonSchema a = HMutu (Schema' JsonSchema) JsonPrimitive a
+
+-- | Simple JSON field type
+type JsonField o a = Field (Schema' JsonPrimitive) o a
 
 -- | Define a text primitive
 text :: JsonSchema Text
@@ -34,9 +39,5 @@ int = alias' number $ iso (\x -> either truncate id $ floatingOrInteger x) fromI
 real :: RealFloat a => JsonSchema a
 real = alias' number $ iso (\x -> either id fromIntegral $ floatingOrInteger x) fromFloatDigits
 
--- | Simple JSON field type
-type JsonField o a = Field (Schema' JsonPrimitive) o a
-
--- | Define a JSON field
-json :: Text -> JsonPrimitive a -> Getter o a -> JsonField o a
-json name alg getter = field name (prim' alg) getter
+hash :: JsonSchema a -> JsonSchema (HashMap Text a)
+hash base = prim' (JsonMap base)

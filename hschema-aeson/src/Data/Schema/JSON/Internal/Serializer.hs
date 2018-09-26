@@ -15,8 +15,8 @@ import           Control.Monad.State         (State)
 import qualified Control.Monad.State         as ST
 import           Control.Natural
 import qualified Data.Aeson.Types            as JSON
-import           Data.Functor.Sum
 import           Data.Functor.Contravariant
+import           Data.Functor.Sum
 import           Data.HashMap.Strict         (HashMap)
 import qualified Data.HashMap.Strict         as Map
 import           Data.List.NonEmpty          (NonEmpty)
@@ -29,7 +29,7 @@ newtype JsonSerializer a = JsonSerializer { runJsonSerializer :: a -> JSON.Value
 
 instance Contravariant JsonSerializer where
   contramap f (JsonSerializer g) = JsonSerializer $ g . f
- 
+
 newtype JsonDeserializer a = JsonDeserializer { runJsonDeserializer :: JSON.Value -> JSON.Parser a }
 
 instance Functor JsonDeserializer where
@@ -53,15 +53,17 @@ toJsonSerializerAlg :: ToJsonSerializer p => HAlgebra (SchemaF p) JsonSerializer
 toJsonSerializerAlg = wrapNT $ \case
   PrimitiveSchema p -> toJsonSerializer p
 
-  OptSchema base -> JsonSerializer $ \x -> maybe JSON.Null (runJsonSerializer base) x
-
   SeqSchema serializer -> JsonSerializer $ \vec -> JSON.Array $ fmap (runJsonSerializer serializer) vec
 
   RecordSchema fields -> JsonSerializer $ \obj -> JSON.Object $ ST.execState (runAp (encodeFieldOf obj) (toFieldAp fields)) Map.empty
     where encodeFieldOf :: o -> FieldDef o JsonSerializer v -> State (HashMap Text JSON.Value) v
-          encodeFieldOf o (FieldDef name (JsonSerializer serialize) getter) = do
+          encodeFieldOf o (RequiredField name (JsonSerializer serialize) getter) = do
             let el = view getter o
             ST.modify $ Map.insert name (serialize el)
+            return el
+          encodeFieldOf o (OptionalField name (JsonSerializer serialize) getter) = do
+            let el = view getter o
+            ST.modify $ Map.insert name (maybe JSON.Null serialize el)
             return el
 
   UnionSchema alts -> JsonSerializer $ \value -> head . catMaybes . NEL.toList $ fmap (encodeAlt value) alts
@@ -86,18 +88,15 @@ toJsonDeserializerAlg :: ToJsonDeserializer p => HAlgebra (SchemaF p) JsonDeseri
 toJsonDeserializerAlg = wrapNT $ \case
   PrimitiveSchema p -> toJsonDeserializer p
 
-  OptSchema base -> JsonDeserializer $ \json -> case json of
-    JSON.Null -> pure Nothing
-    other     -> Just <$> runJsonDeserializer base other
-
   SeqSchema elemSchema -> JsonDeserializer $ \json -> case json of
     JSON.Array v -> traverse (runJsonDeserializer elemSchema) v
     other        -> fail $ "Expected a JSON array but got: " ++ (show other)
 
   RecordSchema fields -> JsonDeserializer $ \json -> case json of
-    JSON.Object obj -> runAp decodeField $ unwrapFields fields
+    JSON.Object obj -> runAp decodeField $ toFieldAp fields
       where decodeField :: FieldDef o JsonDeserializer v -> JSON.Parser v
-            decodeField (FieldDef name (JsonDeserializer deserial) _) = JSON.explicitParseField deserial obj name
+            decodeField (RequiredField name (JsonDeserializer deserial) _) = JSON.explicitParseField deserial obj name
+            decodeField (OptionalField name (JsonDeserializer deserial) _) = JSON.explicitParseFieldMaybe deserial obj name
     other -> fail $ "Expected JSON Object but got: " ++ (show other)
 
   UnionSchema alts -> JsonDeserializer $ \json -> case json of

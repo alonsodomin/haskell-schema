@@ -44,7 +44,7 @@ doubleColon :: AnsiDoc
 doubleColon = PP.colon <> PP.colon
 
 layoutFields :: forall o s. (forall v. FieldDef o s v -> AnsiDoc) -> Fields s o -> AnsiDoc
-layoutFields f fields = renderFields $ ST.execState (runAp fieldDoc $ unwrapFields fields) []
+layoutFields f fields = renderFields $ ST.execState (runAp fieldDoc $ toFieldAp fields) []
   where fieldDoc :: FieldDef o s v -> State [AnsiDoc] v
         fieldDoc fld = do
           fieldDesc <- pure $ PP.pretty "*" <+> (PP.pretty $ fieldName fld) <+> (f fld)
@@ -76,12 +76,11 @@ instance (ToSchemaDoc p, ToSchemaDoc q) => ToSchemaDoc (Sum p q) where
 toSchemaDocAlg :: ToSchemaDoc s => HAlgebra (SchemaF s) SchemaDoc
 toSchemaDocAlg = wrapNT $ \case
   PrimitiveSchema p   -> SchemaDoc $ doubleColon <+> (getDoc $ toSchemaDoc p)
-  OptSchema base      -> SchemaDoc $ PP.pretty "?" <> (getDoc base)
   SeqSchema elemDoc   -> SchemaDoc $ doubleColon <+> PP.vsep [PP.lbracket, getDoc elemDoc, PP.rbracket]
-  HashSchema key el   -> SchemaDoc $ doubleColon <+> PP.pretty "{" <+> getDoc key <+> PP.pretty "->" <+> getDoc el <+> PP.pretty "}"
   RecordSchema fields -> SchemaDoc $ layoutFields fieldDoc' fields
     where fieldDoc' :: FieldDef o SchemaDoc v -> AnsiDoc
-          fieldDoc' (FieldDef _ schemaDoc _) = getDoc schemaDoc
+          fieldDoc' (RequiredField _ schemaDoc _) = getDoc schemaDoc
+          fieldDoc' (OptionalField _ schemaDoc _) = PP.pretty "?" <> (getDoc schemaDoc)
   UnionSchema alts -> SchemaDoc $ PP.vsep $ layoutAlts altDoc' alts
     where altDoc' :: AltDef SchemaDoc a -> Maybe AnsiDoc
           altDoc' (AltDef _ (SchemaDoc doc) _) = Just doc
@@ -107,7 +106,7 @@ instance Divisible SchemaLayout where
     let (left, right) = split x
         leftDoc       = runSchemaLayout leftLayout left
         rightDoc      = runSchemaLayout rightLayout right
-    in leftDoc <+> PP.pretty "->" <+> rightDoc
+    in leftDoc <+> PP.pretty "," <+> rightDoc
 
 class ToSchemaLayout s where
   toSchemaLayout :: s ~> SchemaLayout
@@ -119,17 +118,16 @@ instance (ToSchemaLayout p, ToSchemaLayout q) => ToSchemaLayout (Sum p q) where
 toSchemaLayoutAlg :: ToSchemaLayout s => HAlgebra (SchemaF s) SchemaLayout
 toSchemaLayoutAlg = wrapNT $ \case
   PrimitiveSchema p   -> SchemaLayout $ \x   -> PP.colon <+> runSchemaLayout (toSchemaLayout p) x
-  OptSchema base      -> SchemaLayout $ \x   -> maybe PP.emptyDoc (runSchemaLayout base) x
   SeqSchema elemLay   -> SchemaLayout $ \xs  ->
     PP.colon <> PP.line <> PP.indent indentAmount (PP.vsep $ Vector.toList $ fmap (runSchemaLayout elemLay) xs)
-  HashSchema key el   -> SchemaLayout $ \xxs ->
-    let pairLayout = runSchemaLayout $ divided key el
-    in PP.colon <> PP.line <> PP.indent indentAmount (PP.vsep $ fmap pairLayout (Map.toList xxs))
   RecordSchema fields -> SchemaLayout $ \rc  -> layoutFields (fieldDocOf rc) fields
     where fieldDocOf :: o -> FieldDef o SchemaLayout v -> AnsiDoc
-          fieldDocOf obj (FieldDef _ (SchemaLayout layout) getter) =
+          fieldDocOf obj (RequiredField _ (SchemaLayout layout) getter) =
             let el = view getter obj
             in layout el
+          fieldDocOf obj (OptionalField _ (SchemaLayout layout) getter) =
+            let el = view getter obj
+            in maybe (PP.pretty "Nothing") layout el
   UnionSchema alts -> SchemaLayout $ \value -> head $ layoutAlts (layoutAlt' value) alts
     where layoutAlt' :: o -> AltDef SchemaLayout o -> Maybe AnsiDoc
           layoutAlt' obj (AltDef _ (SchemaLayout layout) getter) = layout <$> obj ^? getter

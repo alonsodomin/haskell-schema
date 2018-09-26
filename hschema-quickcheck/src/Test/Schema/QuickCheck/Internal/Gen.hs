@@ -24,8 +24,8 @@ import qualified Data.Vector                 as Vector
 import           Test.QuickCheck             (Gen)
 import qualified Test.QuickCheck             as Gen
 
-optional :: Gen a -> Gen (Maybe a)
-optional base = Gen.frequency [(1, return Nothing), (3, liftM Just base)]
+optGen :: Gen a -> Gen (Maybe a)
+optGen base = Gen.frequency [(1, return Nothing), (3, liftM Just base)]
 
 class ToGen a where
   toGen :: a ~> Gen
@@ -38,9 +38,10 @@ genAlg :: ToGen p => HAlgebra (SchemaF p) Gen
 genAlg = wrapNT $ \case
   PrimitiveSchema p         -> toGen p
   SeqSchema elemSchema      -> Vector.fromList <$> Gen.listOf elemSchema
-  OptSchema base            -> optional base
-  HashSchema key el         -> Map.fromList <$> (Gen.listOf $ liftA2 ((,)) key el)
-  RecordSchema (Field flds) -> runAp fieldSchema flds
+  RecordSchema (Field flds) -> runAp genField flds
+    where genField :: FieldDef o Gen a -> Gen a
+          genField (RequiredField _ g _) = g
+          genField (OptionalField _ g _) = optGen g
   UnionSchema alts          -> Gen.oneof . NEL.toList $ fmap genAlt alts
     where genAlt :: AltDef Gen a -> Gen a
           genAlt (AltDef _ genSingle pr) = (view $ re pr) <$> genSingle

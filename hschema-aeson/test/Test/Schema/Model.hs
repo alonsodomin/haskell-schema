@@ -54,9 +54,9 @@ data Person = Person { personName :: String, birthDate :: Maybe Int, roles :: [R
 personSchema :: JsonSchema Person
 personSchema = S.record'
              ( Person
-             <$> S.field "name"      JSON.string          (to personName)
-             <*> S.field "birthDate" (S.opt' JSON.int)    (to birthDate)
-             <*> S.field "roles"     (S.list' roleSchema) (to roles)
+             <$> S.field    "name"      JSON.string          (to personName)
+             <*> S.optional "birthDate" JSON.int             (to birthDate)
+             <*> S.field    "roles"     (S.list' roleSchema) (to roles)
              )
 
 instance HasSchema Person where

@@ -4,6 +4,7 @@ module Data.Schema
      ( Field
      , Fields
      , field
+     , optional
      , alt
      , Schema
      , Schema'
@@ -14,14 +15,10 @@ module Data.Schema
      , const'
      , record
      , record'
-     , opt
-     , opt'
      , seq
      , seq'
      , list
      , list'
-     , hash
-     , hash'
      , oneOf
      , oneOf'
      , alias
@@ -50,12 +47,6 @@ prim ann primAlg = hcofree ann $ PrimitiveSchema primAlg
 prim' :: p a -> Schema' p a
 prim' = prim ()
 
-opt :: ann -> Schema ann p a -> Schema ann p (Maybe a)
-opt ann base = hcofree ann (OptSchema base)
-
-opt' :: Schema' p a -> Schema' p (Maybe a)
-opt' = opt ()
-
 -- | Define a schema for a type that is always constant
 const :: ann -> a -> Schema ann p a
 const ann a = hcofree ann (RecordSchema $ pure a)
@@ -83,12 +74,6 @@ list ann elemSchema = alias ann (seq ann elemSchema) (iso Vector.toList Vector.f
 
 list' :: Schema' p a -> Schema' p [a]
 list' = list ()
-
-hash :: (Hashable k, Eq k) => ann -> Schema ann p k -> Schema ann p a -> Schema ann p (HashMap k a)
-hash ann keySchema elemSchema = hcofree ann (HashSchema keySchema elemSchema)
-
-hash' :: (Hashable k, Eq k) => Schema' p k -> Schema' p a -> Schema' p (HashMap k a)
-hash' = hash ()
 
 -- | Define the schema of an union (coproduct) type based on the given alternatives
 oneOf :: ann -> [AltDef (Schema ann p) a] -> Schema ann p a
