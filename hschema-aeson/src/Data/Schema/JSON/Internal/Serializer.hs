@@ -78,7 +78,7 @@ toJsonSerializerAlg = wrapNT $ \case
   AliasSchema (JsonSerializer base) iso -> JsonSerializer $ \value -> base (view (re iso) value)
 
 instance ToJsonSerializer p => ToJsonSerializer (Schema ann p) where
-  toJsonSerializer schema = (cataNT toJsonSerializerAlg) (hforget schema)
+  toJsonSerializer schema = (cataNT toJsonSerializerAlg) (unwrapSchema' $ deannotate schema)
 
 instance (ToJsonDeserializer p, ToJsonDeserializer q) => ToJsonDeserializer (Sum p q) where
   toJsonDeserializer (InL l) = toJsonDeserializer l
@@ -110,4 +110,4 @@ toJsonDeserializerAlg = wrapNT $ \case
   AliasSchema (JsonDeserializer base) iso -> JsonDeserializer $ \json -> (view iso) <$> (base json)
 
 instance ToJsonDeserializer p => ToJsonDeserializer (Schema ann p) where
-  toJsonDeserializer schema = (cataNT toJsonDeserializerAlg) (hforget schema)
+  toJsonDeserializer schema = (cataNT toJsonDeserializerAlg) (unwrapSchema' $ deannotate schema)

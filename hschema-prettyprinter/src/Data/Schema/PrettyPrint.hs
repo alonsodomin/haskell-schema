@@ -87,7 +87,7 @@ toSchemaDocAlg = wrapNT $ \case
   AliasSchema baseDoc _ -> SchemaDoc $ getDoc baseDoc
 
 instance ToSchemaDoc s => ToSchemaDoc (Schema ann s) where
-  toSchemaDoc schema = (cataNT toSchemaDocAlg) (hforget schema)
+  toSchemaDoc schema = (cataNT toSchemaDocAlg) (unwrapSchema' $ deannotate schema)
 
 -- | Renders the given schema to the standard out
 putSchema :: ToSchemaDoc s => s a -> IO ()
@@ -134,7 +134,7 @@ toSchemaLayoutAlg = wrapNT $ \case
   AliasSchema (SchemaLayout baseLayout) getter -> SchemaLayout $ \value -> baseLayout (view (re getter) value)
 
 instance ToSchemaLayout s => ToSchemaLayout (Schema ann s) where
-  toSchemaLayout schema = (cataNT toSchemaLayoutAlg) (hforget schema)
+  toSchemaLayout schema = (cataNT toSchemaLayoutAlg) (unwrapSchema' $ deannotate schema)
 
 -- | Generates a renderer of data types based on the given schema
 prettyPrinter :: ToSchemaLayout s => s a -> (a -> IO ())

@@ -48,4 +48,4 @@ genAlg = wrapNT $ \case
   AliasSchema base iso      -> view iso <$> base
 
 instance ToGen s => ToGen (Schema ann s) where
-  toGen schema = (cataNT genAlg) (hforget schema)
+  toGen schema = (cataNT genAlg) (unwrapSchema' $ deannotate schema)

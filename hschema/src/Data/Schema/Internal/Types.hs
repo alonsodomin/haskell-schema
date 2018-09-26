@@ -44,6 +44,10 @@ instance HFunctor (FieldDef o) where
 
 -- | The type of a field of type `a`, belonging to the data type `o` and based on schema `s`
 newtype Field s o a = Field { toFieldAp :: Ap (FieldDef o s) a }
+
+hoistField :: (m ~> n) -> Field m o a -> Field n o a
+hoistField nt (Field ap) = Field $ hoistAp (hfmap nt) ap
+
 -- | The set of fields for the data type `o` based on schema `s`
 type Fields s o = Field s o o
 
@@ -55,7 +59,7 @@ instance Applicative (Field s o) where
   (Field x) <*> (Field y) = Field (x <*> y)
 
 instance Profunctor (Field s) where
-  lmap f (Field x) = Field $ hoistAp (contraNT f) x
+  lmap f (Field ap) = Field $ hoistAp (contraNT f) ap
     where contraNT :: (n -> o) -> FieldDef o s ~> FieldDef n s
           contraNT f = \case
             RequiredField n s g -> RequiredField n s ((to f) . g)
@@ -105,9 +109,15 @@ pfmap nt = \case
   AliasSchema base iso -> AliasSchema base iso
 
 -- | The Schema type itself for a set of primitives `p` and annotated with `ann`
-type Schema ann p = HCofree (SchemaF p) ann
+newtype Schema ann p a = Schema { unwrapSchema :: HCofree (SchemaF p) ann a }
 -- | Schema for the set of primitives `p` without annotations
-type Schema' p = Schema () p
+newtype Schema' p a = Schema' { unwrapSchema' :: HFix (SchemaF p) a }
+
+annotate :: ann -> Schema' p a -> Schema ann p a
+annotate ann (Schema' hf) = Schema $ htag ann hf
+
+deannotate :: Schema ann p a -> Schema' p a
+deannotate (Schema hcf) = Schema' $ hforget hcf
 
 class HasSchema a where
   type Ann a :: *

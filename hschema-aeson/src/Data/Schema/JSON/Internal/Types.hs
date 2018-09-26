@@ -1,5 +1,6 @@
-{-# LANGUAGE GADTs      #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE GADTs          #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase     #-}
 
 module Data.Schema.JSON.Internal.Types where
 
@@ -20,7 +21,7 @@ import qualified Test.QuickCheck.Gen                  as QC
 import           Test.QuickCheck.Instances.Scientific ()
 import           Test.Schema.QuickCheck.Internal.Gen
 
-data JsonPrimitive f a where
+data JsonPrimitive (f :: (* -> *)) a where
   JsonNumber :: JsonPrimitive f Scientific
   JsonText   :: JsonPrimitive f Text
   JsonBool   :: JsonPrimitive f Bool
