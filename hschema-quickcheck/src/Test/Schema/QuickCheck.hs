@@ -1,6 +1,6 @@
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Test.Schema.QuickCheck
      ( module Test.Schema.QuickCheck.Internal.Gen

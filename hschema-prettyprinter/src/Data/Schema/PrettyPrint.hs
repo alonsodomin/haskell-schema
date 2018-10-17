@@ -22,7 +22,10 @@ import           Control.Lens                              hiding (iso)
 import           Control.Monad.State                       (State)
 import qualified Control.Monad.State                       as ST
 import           Control.Natural
+import           Data.Functor.Contravariant
+import           Data.Functor.Contravariant.Divisible
 import           Data.Functor.Sum
+import qualified Data.HashMap.Strict                       as Map
 import           Data.List.NonEmpty                        (NonEmpty)
 import qualified Data.List.NonEmpty                        as NEL
 import           Data.Maybe
@@ -41,7 +44,7 @@ doubleColon :: AnsiDoc
 doubleColon = PP.colon <> PP.colon
 
 layoutFields :: forall o s. (forall v. FieldDef o s v -> AnsiDoc) -> Fields s o -> AnsiDoc
-layoutFields f fields = renderFields $ ST.execState (runAp fieldDoc fields) []
+layoutFields f fields = renderFields $ ST.execState (runAp fieldDoc $ unwrapField fields) []
   where fieldDoc :: FieldDef o s v -> State [AnsiDoc] v
         fieldDoc fld = do
           fieldDesc <- pure $ PP.pretty "*" <+> (PP.pretty $ fieldName fld) <+> (f fld)
@@ -59,6 +62,10 @@ layoutAlts f alts = catMaybes . NEL.toList $ altDoc <$> alts
 
 newtype SchemaDoc a = SchemaDoc { getDoc :: AnsiDoc } deriving Functor
 
+instance Applicative SchemaDoc where
+  pure _ = SchemaDoc $ PP.emptyDoc
+  (SchemaDoc l) <*> (SchemaDoc r) = SchemaDoc $ l <> r
+
 class ToSchemaDoc s where
   toSchemaDoc :: s ~> SchemaDoc
 
@@ -69,18 +76,18 @@ instance (ToSchemaDoc p, ToSchemaDoc q) => ToSchemaDoc (Sum p q) where
 toSchemaDocAlg :: ToSchemaDoc s => HAlgebra (SchemaF s) SchemaDoc
 toSchemaDocAlg = wrapNT $ \case
   PrimitiveSchema p   -> SchemaDoc $ doubleColon <+> (getDoc $ toSchemaDoc p)
-  OptSchema base      -> SchemaDoc $ PP.pretty "?" <> (getDoc base)
   SeqSchema elemDoc   -> SchemaDoc $ doubleColon <+> PP.vsep [PP.lbracket, getDoc elemDoc, PP.rbracket]
   RecordSchema fields -> SchemaDoc $ layoutFields fieldDoc' fields
     where fieldDoc' :: FieldDef o SchemaDoc v -> AnsiDoc
-          fieldDoc' (FieldDef _ schemaDoc _) = getDoc schemaDoc
+          fieldDoc' (RequiredField _ schemaDoc _) = getDoc schemaDoc
+          fieldDoc' (OptionalField _ schemaDoc _) = PP.pretty "?" <> (getDoc schemaDoc)
   UnionSchema alts -> SchemaDoc $ PP.vsep $ layoutAlts altDoc' alts
     where altDoc' :: AltDef SchemaDoc a -> Maybe AnsiDoc
           altDoc' (AltDef _ (SchemaDoc doc) _) = Just doc
   AliasSchema baseDoc _ -> SchemaDoc $ getDoc baseDoc
 
-instance ToSchemaDoc s => ToSchemaDoc (Schema ann s) where
-  toSchemaDoc schema = (cataNT toSchemaDocAlg) (hforget schema)
+instance ToSchemaDoc s => ToSchemaDoc (Schema s) where
+  toSchemaDoc schema = (cataNT toSchemaDocAlg) (unwrapSchema schema)
 
 -- | Renders the given schema to the standard out
 putSchema :: ToSchemaDoc s => s a -> IO ()
@@ -89,6 +96,17 @@ putSchema schema = do
   putStrLn ""
 
 newtype SchemaLayout a = SchemaLayout { runSchemaLayout :: a -> AnsiDoc }
+
+instance Contravariant SchemaLayout where
+  contramap f (SchemaLayout g) = SchemaLayout $ g . f
+
+instance Divisible SchemaLayout where
+  conquer = SchemaLayout $ const PP.emptyDoc
+  divide split leftLayout rightLayout = SchemaLayout $ \x ->
+    let (left, right) = split x
+        leftDoc       = runSchemaLayout leftLayout left
+        rightDoc      = runSchemaLayout rightLayout right
+    in leftDoc <+> PP.pretty "," <+> rightDoc
 
 class ToSchemaLayout s where
   toSchemaLayout :: s ~> SchemaLayout
@@ -99,21 +117,24 @@ instance (ToSchemaLayout p, ToSchemaLayout q) => ToSchemaLayout (Sum p q) where
 
 toSchemaLayoutAlg :: ToSchemaLayout s => HAlgebra (SchemaF s) SchemaLayout
 toSchemaLayoutAlg = wrapNT $ \case
-  PrimitiveSchema p   -> SchemaLayout $ \x -> PP.colon <+> runSchemaLayout (toSchemaLayout p) x
-  OptSchema base      -> SchemaLayout $ \x -> maybe PP.emptyDoc (runSchemaLayout base) x
-  SeqSchema elemLay   -> SchemaLayout $ \xs -> PP.colon <> PP.line <> PP.indent indentAmount (PP.vsep $ Vector.toList $ fmap (runSchemaLayout elemLay) xs)
-  RecordSchema fields -> SchemaLayout $ \rc -> layoutFields (fieldDocOf rc) fields
+  PrimitiveSchema p   -> SchemaLayout $ \x   -> PP.colon <+> runSchemaLayout (toSchemaLayout p) x
+  SeqSchema elemLay   -> SchemaLayout $ \xs  ->
+    PP.colon <> PP.line <> PP.indent indentAmount (PP.vsep $ Vector.toList $ fmap (runSchemaLayout elemLay) xs)
+  RecordSchema fields -> SchemaLayout $ \rc  -> layoutFields (fieldDocOf rc) fields
     where fieldDocOf :: o -> FieldDef o SchemaLayout v -> AnsiDoc
-          fieldDocOf obj (FieldDef _ (SchemaLayout layout) getter) =
+          fieldDocOf obj (RequiredField _ (SchemaLayout layout) getter) =
             let el = view getter obj
             in layout el
+          fieldDocOf obj (OptionalField _ (SchemaLayout layout) getter) =
+            let el = view getter obj
+            in maybe (PP.pretty "Nothing") layout el
   UnionSchema alts -> SchemaLayout $ \value -> head $ layoutAlts (layoutAlt' value) alts
     where layoutAlt' :: o -> AltDef SchemaLayout o -> Maybe AnsiDoc
           layoutAlt' obj (AltDef _ (SchemaLayout layout) getter) = layout <$> obj ^? getter
   AliasSchema (SchemaLayout baseLayout) getter -> SchemaLayout $ \value -> baseLayout (view (re getter) value)
 
-instance ToSchemaLayout s => ToSchemaLayout (Schema ann s) where
-  toSchemaLayout schema = (cataNT toSchemaLayoutAlg) (hforget schema)
+instance ToSchemaLayout s => ToSchemaLayout (Schema s) where
+  toSchemaLayout schema = (cataNT toSchemaLayoutAlg) (unwrapSchema schema)
 
 -- | Generates a renderer of data types based on the given schema
 prettyPrinter :: ToSchemaLayout s => s a -> (a -> IO ())

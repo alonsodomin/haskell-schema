@@ -1,51 +1,78 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE KindSignatures       #-}
+{-# LANGUAGE LambdaCase           #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Data.Schema.JSON.Internal.Types where
 
+import           Control.Applicative                  (liftA2)
+import           Control.Functor.HigherOrder
 import           Data.Aeson                           (parseJSON)
 import qualified Data.Aeson.Types                     as JSON
+import           Data.HashMap.Strict                  (HashMap)
+import qualified Data.HashMap.Strict                  as Map
+import           Data.Schema.Internal.Types
 import           Data.Schema.JSON.Internal.Serializer
 import           Data.Schema.PrettyPrint
 import           Data.Scientific
 import           Data.Text                            (Text)
 import qualified Data.Text                            as T
+import           Data.Text.Prettyprint.Doc            ((<+>))
 import qualified Data.Text.Prettyprint.Doc            as PP
 import qualified Test.QuickCheck                      as QC
 import qualified Test.QuickCheck.Gen                  as QC
 import           Test.QuickCheck.Instances.Scientific ()
 import           Test.Schema.QuickCheck.Internal.Gen
 
-data JsonPrimitive a where
-  JsonNumber :: JsonPrimitive Scientific
-  JsonText   :: JsonPrimitive Text
-  JsonBool   :: JsonPrimitive Bool
+data JsonPrimitive (f :: (* -> *)) (a :: *) where
+  JsonNumber :: JsonPrimitive f Scientific
+  JsonText   :: JsonPrimitive f Text
+  JsonBool   :: JsonPrimitive f Bool
+  JsonMap    :: f a -> JsonPrimitive f (HashMap Text a)
 
-instance Show (JsonPrimitive a) where
-  show JsonNumber = "JSON Number"
-  show JsonText   = "JSON Text"
-  show JsonBool   = "JSON Bool"
+type JsonType = HMutu JsonPrimitive Schema
 
-instance ToJsonSerializer JsonPrimitive where
-  toJsonSerializer JsonNumber = JsonSerializer $ JSON.Number
-  toJsonSerializer JsonText   = JsonSerializer $ JSON.String
-  toJsonSerializer JsonBool   = JsonSerializer $ JSON.Bool
+-- | Simple JSON schema type
+type JsonSchema = Schema JsonType
 
-instance ToJsonDeserializer JsonPrimitive where
-  toJsonDeserializer JsonNumber = JsonDeserializer $ parseJSON
-  toJsonDeserializer JsonText   = JsonDeserializer $ parseJSON
-  toJsonDeserializer JsonBool   = JsonDeserializer $ parseJSON
+-- | Simple JSON field type
+type JsonField o a = Field JsonSchema o a
 
-instance ToGen JsonPrimitive where
-  toGen JsonNumber = QC.arbitrary
-  toGen JsonText   = T.pack <$> (QC.listOf QC.chooseAny)
-  toGen JsonBool   = QC.arbitrary :: (QC.Gen Bool)
+instance ToJsonSerializer JsonType where
+  toJsonSerializer jType = JsonSerializer $ case (unmutu jType) of
+    JsonNumber      -> JSON.Number
+    JsonText        -> JSON.String
+    JsonBool        -> JSON.Bool
+    JsonMap value   -> \x ->
+      JSON.Object $ Map.map (runJsonSerializer . toJsonSerializer $ value) x
 
-instance ToSchemaDoc JsonPrimitive where
-  toSchemaDoc JsonNumber = SchemaDoc $ PP.pretty "Number"
-  toSchemaDoc JsonText   = SchemaDoc $ PP.pretty "Text"
-  toSchemaDoc JsonBool   = SchemaDoc $ PP.pretty "Bool"
+instance ToJsonDeserializer JsonType where
+  toJsonDeserializer jType = JsonDeserializer $ case (unmutu jType) of
+    JsonNumber    -> parseJSON
+    JsonText      -> parseJSON
+    JsonBool      -> parseJSON
+    JsonMap value -> \case
+      JSON.Object obj -> Map.foldrWithKey Map.insert Map.empty <$> traverse (runJsonDeserializer . toJsonDeserializer $ value) obj
 
-instance ToSchemaLayout JsonPrimitive where
-  toSchemaLayout JsonNumber = SchemaLayout $ PP.unsafeViaShow
-  toSchemaLayout JsonText   = SchemaLayout $ PP.unsafeViaShow
-  toSchemaLayout JsonBool   = SchemaLayout $ PP.unsafeViaShow
+instance ToGen JsonType where
+  toGen jType = case (unmutu jType) of
+    JsonNumber    -> QC.arbitrary
+    JsonText      -> T.pack <$> (QC.listOf QC.chooseAny)
+    JsonBool      -> QC.arbitrary :: (QC.Gen Bool)
+    JsonMap value -> Map.fromList <$> (QC.listOf $ liftA2 ((,)) (T.pack <$> (QC.listOf QC.chooseAny)) (toGen value))
+
+instance ToSchemaDoc JsonType where
+  toSchemaDoc jType = SchemaDoc $ case (unmutu jType) of
+    JsonNumber    -> PP.pretty "Number"
+    JsonText      -> PP.pretty "Text"
+    JsonBool      -> PP.pretty "Bool"
+    JsonMap value -> PP.pretty "Map { Text ->" <+> (getDoc . toSchemaDoc $ value) <+> PP.pretty "}"
+
+instance ToSchemaLayout JsonType where
+  toSchemaLayout jType = SchemaLayout $ case (unmutu jType) of
+    JsonNumber    -> PP.unsafeViaShow
+    JsonText      -> PP.unsafeViaShow
+    JsonBool      -> PP.unsafeViaShow
+    JsonMap value -> \x ->
+      PP.vsep $ fmap (\(k,v) -> PP.pretty k <+> PP.pretty "->" <+> runSchemaLayout (toSchemaLayout value) v) $ Map.toList x
