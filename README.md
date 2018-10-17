@@ -80,15 +80,14 @@ Now, defining the schema for the `Person` data type, you define each of the fiel
 ```haskell
 import qualified Data.Schema             as S
 import           Data.Schema.JSON
-import           Data.Schema.JSON.Simple (JsonSchema)
 import qualified Data.Schema.JSON.Simple as JSON
 
 personSchema :: JsonSchema Person
-personSchema = S.record'
+personSchema = S.record
              ( Person
-             <$> S.field "name"      JSON.string          (to personName)
-             <*> S.field "birthDate" (S.opt' JSON.int)    (to birthDate)
-             <*> S.field "roles"     (S.list' roleSchema) (to roles)
+             <$> S.field    "name"      JSON.string         (to personName)
+             <*> S.optional "birthDate" JSON.int            (to birthDate)
+             <*> S.field    "roles"     (S.list roleSchema) (to roles)
              )
 ```
 
@@ -96,16 +95,16 @@ The schema for the `Role` data type is defined as a list of alternatives alongsi
 
 ```haskell
 adminRole :: JsonSchema AdminRole
-adminRole = S.record'
+adminRole = S.record
           ( AdminRole'
           <$> S.field "department"       JSON.string (to department)
           <*> S.field "subordinateCount" JSON.int    (to subordinateCount)
           )
 
 roleSchema :: JsonSchema Role
-roleSchema = S.oneOf'
-           [ S.alt "user"  (S.const' UserRole') _UserRole
-           , S.alt "admin" adminRole            _AdminRole
+roleSchema = S.oneOf
+           [ S.alt "user"  (S.const UserRole') _UserRole
+           , S.alt "admin" adminRole           _AdminRole
            ]
 ```
 
@@ -116,8 +115,7 @@ Once you have defined the schema, by proving an instance for the `HasSchema` typ
 import Data.Schema (HasSchema(..))
 
 instance HasSchema Person where
-  type Ann Person = ()
-  type PrimitivesOf Person = JsonPrimitive
+  type PrimitivesOf Person = JsonType
 
   getSchema = personSchema
 ```
