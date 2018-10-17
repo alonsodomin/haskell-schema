@@ -16,6 +16,7 @@ import           Data.Schema.Internal.Types
 import           Data.Schema.JSON.Internal.Serializer
 import           Data.Schema.PrettyPrint
 import           Data.Scientific
+import Data.Vector (Vector)
 import           Data.Text                            (Text)
 import qualified Data.Text                            as T
 import           Data.Text.Prettyprint.Doc            ((<+>))
@@ -29,6 +30,7 @@ data JsonPrimitive (f :: (* -> *)) (a :: *) where
   JsonNumber :: JsonPrimitive f Scientific
   JsonText   :: JsonPrimitive f Text
   JsonBool   :: JsonPrimitive f Bool
+  JsonArray  :: f a -> JsonPrimitive f (Vector a)
   JsonMap    :: f a -> JsonPrimitive f (HashMap Text a)
 
 type JsonType = HMutu JsonPrimitive Schema
@@ -44,6 +46,8 @@ instance ToJsonSerializer JsonType where
     JsonNumber      -> JSON.Number
     JsonText        -> JSON.String
     JsonBool        -> JSON.Bool
+    JsonArray value -> \x ->
+      JSON.Array $ fmap (runJsonSerializer . toJsonSerializer $ value) x
     JsonMap value   -> \x ->
       JSON.Object $ Map.map (runJsonSerializer . toJsonSerializer $ value) x
 

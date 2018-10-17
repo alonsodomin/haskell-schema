@@ -12,6 +12,7 @@ import           Data.Schema
 import           Data.Schema.Internal.Types
 import           Data.Schema.JSON.Internal.Types
 import           Data.Scientific
+import Data.Vector (Vector)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 
@@ -35,5 +36,8 @@ int = alias (iso (\x -> either truncate id $ floatingOrInteger x) fromIntegral) 
 real :: RealFloat a => JsonSchema a
 real = alias (iso (\x -> either id fromIntegral $ floatingOrInteger x) fromFloatDigits) number
 
+array :: JsonSchema a -> JsonSchema (Vector a)
+array elemSchema = prim $ HMutu (JsonArray elemSchema)
+
 hash :: JsonSchema a -> JsonSchema (HashMap Text a)
-hash base = prim $ HMutu (JsonMap base)
+hash elemSchema = prim $ HMutu (JsonMap elemSchema)
