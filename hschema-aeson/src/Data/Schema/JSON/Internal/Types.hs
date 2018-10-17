@@ -59,8 +59,10 @@ instance ToJsonDeserializer JsonType where
     JsonBool        -> parseJSON
     JsonArray value -> \case
       JSON.Array arr -> traverse (runJsonDeserializer . toJsonDeserializer $ value) arr
+      other          -> fail $ "Expected a JSON array but got: " ++ (show other)
     JsonMap value   -> \case
       JSON.Object obj -> Map.foldrWithKey Map.insert Map.empty <$> traverse (runJsonDeserializer . toJsonDeserializer $ value) obj
+      other           -> fail $ "Expected a JSON object but got: " ++ (show other)
 
 instance ToGen JsonType where
   toGen jType = case (unmutu jType) of
@@ -72,15 +74,18 @@ instance ToGen JsonType where
 
 instance ToSchemaDoc JsonType where
   toSchemaDoc jType = SchemaDoc $ case (unmutu jType) of
-    JsonNumber    -> PP.pretty "Number"
-    JsonText      -> PP.pretty "Text"
-    JsonBool      -> PP.pretty "Bool"
-    JsonMap value -> PP.pretty "Map { Text ->" <+> (getDoc . toSchemaDoc $ value) <+> PP.pretty "}"
+    JsonNumber      -> PP.pretty "Number"
+    JsonText        -> PP.pretty "Text"
+    JsonBool        -> PP.pretty "Bool"
+    JsonArray value -> PP.pretty "[" <> (getDoc . toSchemaDoc $ value) <> PP.pretty "]"
+    JsonMap value   -> PP.pretty "Map { Text ->" <+> (getDoc . toSchemaDoc $ value) <+> PP.pretty "}"
 
 instance ToSchemaLayout JsonType where
   toSchemaLayout jType = SchemaLayout $ case (unmutu jType) of
-    JsonNumber    -> PP.unsafeViaShow
-    JsonText      -> PP.unsafeViaShow
-    JsonBool      -> PP.unsafeViaShow
-    JsonMap value -> \x ->
+    JsonNumber      -> PP.unsafeViaShow
+    JsonText        -> PP.unsafeViaShow
+    JsonBool        -> PP.unsafeViaShow
+    JsonArray value -> \x ->
+      PP.vsep $ fmap (\v -> runSchemaLayout (toSchemaLayout value) v) $ Vector.toList x
+    JsonMap value   -> \x ->
       PP.vsep $ fmap (\(k,v) -> PP.pretty k <+> PP.pretty "->" <+> runSchemaLayout (toSchemaLayout value) v) $ Map.toList x

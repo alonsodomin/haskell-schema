@@ -83,7 +83,6 @@ instance HFunctor AltDef where
 -- | Metadata for a schema `s` based on primitives `p` and representing type `a`
 data SchemaF p s a where
   PrimitiveSchema :: p a -> SchemaF p s a
-  SeqSchema       :: s a -> SchemaF p s (Vector a)
   RecordSchema    :: Fields s a -> SchemaF p s a
   UnionSchema     :: NonEmpty (AltDef s a) -> SchemaF p s a
   AliasSchema     :: s a -> Iso' a b -> SchemaF p s b
@@ -91,7 +90,6 @@ data SchemaF p s a where
 instance HFunctor (SchemaF p) where
   hfmap nt = \case
     PrimitiveSchema p         -> PrimitiveSchema p
-    SeqSchema elemSch         -> SeqSchema $ nt elemSch
     RecordSchema (Field flds) -> RecordSchema . Field $ hoistAp (hfmap nt) flds
     UnionSchema alts          -> UnionSchema $ fmap (hfmap nt) alts
     AliasSchema base iso      -> AliasSchema (nt base) iso
@@ -112,7 +110,6 @@ instance HFunctor Schema where
           pfmap :: (p ~> q) -> SchemaF p s ~> SchemaF q s
           pfmap nt = \case
             PrimitiveSchema p    -> PrimitiveSchema (nt p)
-            SeqSchema elemSch    -> SeqSchema elemSch
             RecordSchema fields  -> RecordSchema fields
             UnionSchema alts     -> UnionSchema alts
             AliasSchema base iso -> AliasSchema base iso

@@ -11,7 +11,6 @@ module Data.Schema
      , prim
      , const
      , record
-     , seq
      , list
      , oneOf
      , alias
@@ -45,14 +44,9 @@ const a = Schema (HFix (RecordSchema $ pure a))
 record :: Fields (Schema p) a -> Schema p a
 record ps = Schema (HFix (RecordSchema $ hoistField unwrapSchema ps))
 
--- | Define the schema of a vector based on the element type
-seq :: Schema p a -> Schema p (Vector a)
-seq elemSchema = Schema (HFix (SeqSchema $ unwrapSchema elemSchema))
-
 -- | Define the schema of a list based on the element type
-
-list :: Schema p a -> Schema p [a]
-list elemSchema = invmap Vector.toList Vector.fromList (seq elemSchema)
+list :: Schema p (Vector a) -> Schema p [a]
+list = invmap Vector.toList Vector.fromList
 
 -- | Define the schema of an union (coproduct) type based on the given alternatives
 oneOf :: [AltDef (Schema p) a] -> Schema p a
