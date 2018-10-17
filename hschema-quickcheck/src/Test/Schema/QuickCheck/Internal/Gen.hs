@@ -47,5 +47,5 @@ genAlg = wrapNT $ \case
           genAlt (AltDef _ genSingle pr) = (view $ re pr) <$> genSingle
   AliasSchema base iso      -> view iso <$> base
 
-instance ToGen s => ToGen (Schema ann s) where
-  toGen schema = (cataNT genAlg) (unwrapSchema' $ deannotate schema)
+instance ToGen s => ToGen (Schema s) where
+  toGen schema = (cataNT genAlg) (unwrapSchema schema)

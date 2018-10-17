@@ -25,6 +25,7 @@ dependencies:
 - comonad >= 5.0 && < 5.1
 - contravariant
 - hashable
+- invariant
 - mtl
 - natural-transformation
 - lens

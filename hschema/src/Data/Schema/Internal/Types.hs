@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE TypeOperators             #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 
 module Data.Schema.Internal.Types where
 
@@ -16,6 +17,7 @@ import           Control.Functor.HigherOrder
 import           Control.Lens                hiding (iso)
 import qualified Control.Lens                as Lens
 import           Control.Natural
+import           Data.Functor.Invariant
 import           Data.List.NonEmpty          (NonEmpty)
 import           Data.Profunctor
 import           Data.Text                   (Text)
@@ -32,18 +34,13 @@ fieldName :: FieldDef o s a -> Text
 fieldName (RequiredField name _ _) = name
 fieldName (OptionalField name _ _) = name
 
--- instance Functor s => Functor (FieldDef o s) where
---   fmap f = \case
---     RequiredField name s acc -> RequiredField name (fmap f s) (acc . (to f))
---     OptionalField name s acc -> OptionalField name (fmap f s) acc
-
 instance HFunctor (FieldDef o) where
   hfmap nt = \case
     RequiredField name s acc -> RequiredField name (nt s) acc
     OptionalField name s acc -> OptionalField name (nt s) acc
 
 -- | The type of a field of type `a`, belonging to the data type `o` and based on schema `s`
-newtype Field s o a = Field { toFieldAp :: Ap (FieldDef o s) a }
+newtype Field s o a = Field { unwrapField :: Ap (FieldDef o s) a }
 
 hoistField :: (m ~> n) -> Field m o a -> Field n o a
 hoistField nt (Field ap) = Field $ hoistAp (hfmap nt) ap
@@ -99,28 +96,28 @@ instance HFunctor (SchemaF p) where
     UnionSchema alts          -> UnionSchema $ fmap (hfmap nt) alts
     AliasSchema base iso      -> AliasSchema (nt base) iso
 
--- | Perform a natural transformation of the primitive algebra of the Schema
-pfmap :: (p ~> q) -> SchemaF p s a -> SchemaF q s a
-pfmap nt = \case
-  PrimitiveSchema p    -> PrimitiveSchema (nt p)
-  SeqSchema elemSch    -> SeqSchema elemSch
-  RecordSchema fields  -> RecordSchema fields
-  UnionSchema alts     -> UnionSchema alts
-  AliasSchema base iso -> AliasSchema base iso
+-- | The Schema type itself for a set of primitives `p`
+newtype Schema p a = Schema { unwrapSchema :: HFix (SchemaF p) a }
 
--- | The Schema type itself for a set of primitives `p` and annotated with `ann`
-newtype Schema ann p a = Schema { unwrapSchema :: HCofree (SchemaF p) ann a }
--- | Schema for the set of primitives `p` without annotations
-newtype Schema' p a = Schema' { unwrapSchema' :: HFix (SchemaF p) a }
+instance Invariant (Schema p) where
+  invmap f g sch = case (unfix . unwrapSchema $ sch) of
+    AliasSchema base iso -> Schema . HFix $ AliasSchema base (iso . (Lens.iso f g))
+    otherwise            -> Schema . HFix $ AliasSchema (unwrapSchema sch) (Lens.iso f g)
 
-annotate :: ann -> Schema' p a -> Schema ann p a
-annotate ann (Schema' hf) = Schema $ htag ann hf
+-- | An Schema has a HFunctor that performs a natural transformation of the primitive algebra of the Schema
+instance HFunctor Schema where
+  hfmap nt (Schema fsch) = Schema $ cataNT pfmapAlg fsch
+    where pfmapAlg = wrapNT $ \sch -> HFix $ pfmap nt sch
 
-deannotate :: Schema ann p a -> Schema' p a
-deannotate (Schema hcf) = Schema' $ hforget hcf
+          pfmap :: (p ~> q) -> SchemaF p s ~> SchemaF q s
+          pfmap nt = \case
+            PrimitiveSchema p    -> PrimitiveSchema (nt p)
+            SeqSchema elemSch    -> SeqSchema elemSch
+            RecordSchema fields  -> RecordSchema fields
+            UnionSchema alts     -> UnionSchema alts
+            AliasSchema base iso -> AliasSchema base iso
 
 class HasSchema a where
-  type Ann a :: *
   type PrimitivesOf a :: * -> *
 
-  getSchema :: Schema (Ann a) (PrimitivesOf a) a
+  getSchema :: Schema (PrimitivesOf a) a

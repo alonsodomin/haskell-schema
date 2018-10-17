@@ -55,7 +55,7 @@ toJsonSerializerAlg = wrapNT $ \case
 
   SeqSchema serializer -> JsonSerializer $ \vec -> JSON.Array $ fmap (runJsonSerializer serializer) vec
 
-  RecordSchema fields -> JsonSerializer $ \obj -> JSON.Object $ ST.execState (runAp (encodeFieldOf obj) (toFieldAp fields)) Map.empty
+  RecordSchema fields -> JsonSerializer $ \obj -> JSON.Object $ ST.execState (runAp (encodeFieldOf obj) (unwrapField fields)) Map.empty
     where encodeFieldOf :: o -> FieldDef o JsonSerializer v -> State (HashMap Text JSON.Value) v
           encodeFieldOf o (RequiredField name (JsonSerializer serialize) getter) = do
             let el = view getter o
@@ -77,8 +77,8 @@ toJsonSerializerAlg = wrapNT $ \case
 
   AliasSchema (JsonSerializer base) iso -> JsonSerializer $ \value -> base (view (re iso) value)
 
-instance ToJsonSerializer p => ToJsonSerializer (Schema ann p) where
-  toJsonSerializer schema = (cataNT toJsonSerializerAlg) (unwrapSchema' $ deannotate schema)
+instance ToJsonSerializer p => ToJsonSerializer (Schema p) where
+  toJsonSerializer schema = (cataNT toJsonSerializerAlg) (unwrapSchema schema)
 
 instance (ToJsonDeserializer p, ToJsonDeserializer q) => ToJsonDeserializer (Sum p q) where
   toJsonDeserializer (InL l) = toJsonDeserializer l
@@ -93,7 +93,7 @@ toJsonDeserializerAlg = wrapNT $ \case
     other        -> fail $ "Expected a JSON array but got: " ++ (show other)
 
   RecordSchema fields -> JsonDeserializer $ \json -> case json of
-    JSON.Object obj -> runAp decodeField $ toFieldAp fields
+    JSON.Object obj -> runAp decodeField $ unwrapField fields
       where decodeField :: FieldDef o JsonDeserializer v -> JSON.Parser v
             decodeField (RequiredField name (JsonDeserializer deserial) _) = JSON.explicitParseField deserial obj name
             decodeField (OptionalField name (JsonDeserializer deserial) _) = JSON.explicitParseFieldMaybe deserial obj name
@@ -109,5 +109,5 @@ toJsonDeserializerAlg = wrapNT $ \case
 
   AliasSchema (JsonDeserializer base) iso -> JsonDeserializer $ \json -> (view iso) <$> (base json)
 
-instance ToJsonDeserializer p => ToJsonDeserializer (Schema ann p) where
-  toJsonDeserializer schema = (cataNT toJsonDeserializerAlg) (unwrapSchema' $ deannotate schema)
+instance ToJsonDeserializer p => ToJsonDeserializer (Schema p) where
+  toJsonDeserializer schema = (cataNT toJsonDeserializerAlg) (unwrapSchema schema)

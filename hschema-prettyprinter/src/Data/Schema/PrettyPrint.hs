@@ -44,7 +44,7 @@ doubleColon :: AnsiDoc
 doubleColon = PP.colon <> PP.colon
 
 layoutFields :: forall o s. (forall v. FieldDef o s v -> AnsiDoc) -> Fields s o -> AnsiDoc
-layoutFields f fields = renderFields $ ST.execState (runAp fieldDoc $ toFieldAp fields) []
+layoutFields f fields = renderFields $ ST.execState (runAp fieldDoc $ unwrapField fields) []
   where fieldDoc :: FieldDef o s v -> State [AnsiDoc] v
         fieldDoc fld = do
           fieldDesc <- pure $ PP.pretty "*" <+> (PP.pretty $ fieldName fld) <+> (f fld)
@@ -86,8 +86,8 @@ toSchemaDocAlg = wrapNT $ \case
           altDoc' (AltDef _ (SchemaDoc doc) _) = Just doc
   AliasSchema baseDoc _ -> SchemaDoc $ getDoc baseDoc
 
-instance ToSchemaDoc s => ToSchemaDoc (Schema ann s) where
-  toSchemaDoc schema = (cataNT toSchemaDocAlg) (unwrapSchema' $ deannotate schema)
+instance ToSchemaDoc s => ToSchemaDoc (Schema s) where
+  toSchemaDoc schema = (cataNT toSchemaDocAlg) (unwrapSchema schema)
 
 -- | Renders the given schema to the standard out
 putSchema :: ToSchemaDoc s => s a -> IO ()
@@ -133,8 +133,8 @@ toSchemaLayoutAlg = wrapNT $ \case
           layoutAlt' obj (AltDef _ (SchemaLayout layout) getter) = layout <$> obj ^? getter
   AliasSchema (SchemaLayout baseLayout) getter -> SchemaLayout $ \value -> baseLayout (view (re getter) value)
 
-instance ToSchemaLayout s => ToSchemaLayout (Schema ann s) where
-  toSchemaLayout schema = (cataNT toSchemaLayoutAlg) (unwrapSchema' $ deannotate schema)
+instance ToSchemaLayout s => ToSchemaLayout (Schema s) where
+  toSchemaLayout schema = (cataNT toSchemaLayoutAlg) (unwrapSchema schema)
 
 -- | Generates a renderer of data types based on the given schema
 prettyPrinter :: ToSchemaLayout s => s a -> (a -> IO ())

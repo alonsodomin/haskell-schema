@@ -3,7 +3,10 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Data.Schema.JSON
-     ( JsonSerializer(..)
+     ( JsonType
+     , JsonSchema
+     , JsonField
+     , JsonSerializer(..)
      , JsonDeserializer(..)
      , ToJsonSerializer(..)
      , ToJsonDeserializer(..)
