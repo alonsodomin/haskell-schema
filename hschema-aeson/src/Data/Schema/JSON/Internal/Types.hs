@@ -17,6 +17,7 @@ import           Data.Schema.JSON.Internal.Serializer
 import           Data.Schema.PrettyPrint
 import           Data.Scientific
 import Data.Vector (Vector)
+import qualified Data.Vector as Vector
 import           Data.Text                            (Text)
 import qualified Data.Text                            as T
 import           Data.Text.Prettyprint.Doc            ((<+>))
@@ -53,18 +54,21 @@ instance ToJsonSerializer JsonType where
 
 instance ToJsonDeserializer JsonType where
   toJsonDeserializer jType = JsonDeserializer $ case (unmutu jType) of
-    JsonNumber    -> parseJSON
-    JsonText      -> parseJSON
-    JsonBool      -> parseJSON
-    JsonMap value -> \case
+    JsonNumber      -> parseJSON
+    JsonText        -> parseJSON
+    JsonBool        -> parseJSON
+    JsonArray value -> \case
+      JSON.Array arr -> traverse (runJsonDeserializer . toJsonDeserializer $ value) arr
+    JsonMap value   -> \case
       JSON.Object obj -> Map.foldrWithKey Map.insert Map.empty <$> traverse (runJsonDeserializer . toJsonDeserializer $ value) obj
 
 instance ToGen JsonType where
   toGen jType = case (unmutu jType) of
-    JsonNumber    -> QC.arbitrary
-    JsonText      -> T.pack <$> (QC.listOf QC.chooseAny)
-    JsonBool      -> QC.arbitrary :: (QC.Gen Bool)
-    JsonMap value -> Map.fromList <$> (QC.listOf $ liftA2 ((,)) (T.pack <$> (QC.listOf QC.chooseAny)) (toGen value))
+    JsonNumber      -> QC.arbitrary
+    JsonText        -> T.pack <$> (QC.listOf QC.chooseAny)
+    JsonBool        -> QC.arbitrary :: (QC.Gen Bool)
+    JsonArray value -> Vector.fromList <$> QC.listOf (toGen value)
+    JsonMap value   -> Map.fromList <$> (QC.listOf $ liftA2 ((,)) (T.pack <$> (QC.listOf QC.chooseAny)) (toGen value))
 
 instance ToSchemaDoc JsonType where
   toSchemaDoc jType = SchemaDoc $ case (unmutu jType) of
