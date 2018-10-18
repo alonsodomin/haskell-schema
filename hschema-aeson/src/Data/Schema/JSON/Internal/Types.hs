@@ -20,6 +20,8 @@ import           Data.Text                            (Text)
 import qualified Data.Text                            as T
 import           Data.Text.Prettyprint.Doc            ((<+>))
 import qualified Data.Text.Prettyprint.Doc            as PP
+import           Data.Vector                          (Vector)
+import qualified Data.Vector                          as Vector
 import qualified Test.QuickCheck                      as QC
 import qualified Test.QuickCheck.Gen                  as QC
 import           Test.QuickCheck.Instances.Scientific ()
@@ -29,6 +31,7 @@ data JsonPrimitive (f :: (* -> *)) (a :: *) where
   JsonNumber :: JsonPrimitive f Scientific
   JsonText   :: JsonPrimitive f Text
   JsonBool   :: JsonPrimitive f Bool
+  JsonArray  :: f a -> JsonPrimitive f (Vector a)
   JsonMap    :: f a -> JsonPrimitive f (HashMap Text a)
 
 type JsonType = HMutu JsonPrimitive Schema
@@ -44,35 +47,45 @@ instance ToJsonSerializer JsonType where
     JsonNumber      -> JSON.Number
     JsonText        -> JSON.String
     JsonBool        -> JSON.Bool
+    JsonArray value -> \x ->
+      JSON.Array $ fmap (runJsonSerializer . toJsonSerializer $ value) x
     JsonMap value   -> \x ->
       JSON.Object $ Map.map (runJsonSerializer . toJsonSerializer $ value) x
 
 instance ToJsonDeserializer JsonType where
   toJsonDeserializer jType = JsonDeserializer $ case (unmutu jType) of
-    JsonNumber    -> parseJSON
-    JsonText      -> parseJSON
-    JsonBool      -> parseJSON
-    JsonMap value -> \case
+    JsonNumber      -> parseJSON
+    JsonText        -> parseJSON
+    JsonBool        -> parseJSON
+    JsonArray value -> \case
+      JSON.Array arr -> traverse (runJsonDeserializer . toJsonDeserializer $ value) arr
+      other          -> fail $ "Expected a JSON array but got: " ++ (show other)
+    JsonMap value   -> \case
       JSON.Object obj -> Map.foldrWithKey Map.insert Map.empty <$> traverse (runJsonDeserializer . toJsonDeserializer $ value) obj
+      other           -> fail $ "Expected a JSON object but got: " ++ (show other)
 
 instance ToGen JsonType where
   toGen jType = case (unmutu jType) of
-    JsonNumber    -> QC.arbitrary
-    JsonText      -> T.pack <$> (QC.listOf QC.chooseAny)
-    JsonBool      -> QC.arbitrary :: (QC.Gen Bool)
-    JsonMap value -> Map.fromList <$> (QC.listOf $ liftA2 ((,)) (T.pack <$> (QC.listOf QC.chooseAny)) (toGen value))
+    JsonNumber      -> QC.arbitrary
+    JsonText        -> T.pack <$> (QC.listOf QC.chooseAny)
+    JsonBool        -> QC.arbitrary :: (QC.Gen Bool)
+    JsonArray value -> Vector.fromList <$> QC.listOf (toGen value)
+    JsonMap value   -> Map.fromList <$> (QC.listOf $ liftA2 ((,)) (T.pack <$> (QC.listOf QC.chooseAny)) (toGen value))
 
 instance ToSchemaDoc JsonType where
   toSchemaDoc jType = SchemaDoc $ case (unmutu jType) of
-    JsonNumber    -> PP.pretty "Number"
-    JsonText      -> PP.pretty "Text"
-    JsonBool      -> PP.pretty "Bool"
-    JsonMap value -> PP.pretty "Map { Text ->" <+> (getDoc . toSchemaDoc $ value) <+> PP.pretty "}"
+    JsonNumber      -> PP.pretty "Number"
+    JsonText        -> PP.pretty "Text"
+    JsonBool        -> PP.pretty "Bool"
+    JsonArray value -> PP.pretty "[" <> (getDoc . toSchemaDoc $ value) <> PP.pretty "]"
+    JsonMap value   -> PP.pretty "Map { Text ->" <+> (getDoc . toSchemaDoc $ value) <+> PP.pretty "}"
 
 instance ToSchemaLayout JsonType where
   toSchemaLayout jType = SchemaLayout $ case (unmutu jType) of
-    JsonNumber    -> PP.unsafeViaShow
-    JsonText      -> PP.unsafeViaShow
-    JsonBool      -> PP.unsafeViaShow
-    JsonMap value -> \x ->
+    JsonNumber      -> PP.unsafeViaShow
+    JsonText        -> PP.unsafeViaShow
+    JsonBool        -> PP.unsafeViaShow
+    JsonArray value -> \x ->
+      PP.vsep $ fmap (\v -> runSchemaLayout (toSchemaLayout value) v) $ Vector.toList x
+    JsonMap value   -> \x ->
       PP.vsep $ fmap (\(k,v) -> PP.pretty k <+> PP.pretty "->" <+> runSchemaLayout (toSchemaLayout value) v) $ Map.toList x

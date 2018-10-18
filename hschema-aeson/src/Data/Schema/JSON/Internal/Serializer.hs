@@ -53,8 +53,6 @@ toJsonSerializerAlg :: ToJsonSerializer p => HAlgebra (SchemaF p) JsonSerializer
 toJsonSerializerAlg = wrapNT $ \case
   PrimitiveSchema p -> toJsonSerializer p
 
-  SeqSchema serializer -> JsonSerializer $ \vec -> JSON.Array $ fmap (runJsonSerializer serializer) vec
-
   RecordSchema fields -> JsonSerializer $ \obj -> JSON.Object $ ST.execState (runAp (encodeFieldOf obj) (unwrapField fields)) Map.empty
     where encodeFieldOf :: o -> FieldDef o JsonSerializer v -> State (HashMap Text JSON.Value) v
           encodeFieldOf o (RequiredField name (JsonSerializer serialize) getter) = do
@@ -87,10 +85,6 @@ instance (ToJsonDeserializer p, ToJsonDeserializer q) => ToJsonDeserializer (Sum
 toJsonDeserializerAlg :: ToJsonDeserializer p => HAlgebra (SchemaF p) JsonDeserializer
 toJsonDeserializerAlg = wrapNT $ \case
   PrimitiveSchema p -> toJsonDeserializer p
-
-  SeqSchema elemSchema -> JsonDeserializer $ \json -> case json of
-    JSON.Array v -> traverse (runJsonDeserializer elemSchema) v
-    other        -> fail $ "Expected a JSON array but got: " ++ (show other)
 
   RecordSchema fields -> JsonDeserializer $ \json -> case json of
     JSON.Object obj -> runAp decodeField $ unwrapField fields

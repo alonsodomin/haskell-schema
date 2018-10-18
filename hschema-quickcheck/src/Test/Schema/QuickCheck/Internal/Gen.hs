@@ -37,7 +37,6 @@ instance (ToGen p, ToGen q) => ToGen (Sum p q) where
 genAlg :: ToGen p => HAlgebra (SchemaF p) Gen
 genAlg = wrapNT $ \case
   PrimitiveSchema p         -> toGen p
-  SeqSchema elemSchema      -> Vector.fromList <$> Gen.listOf elemSchema
   RecordSchema (Field flds) -> runAp genField flds
     where genField :: FieldDef o Gen a -> Gen a
           genField (RequiredField _ g _) = g
