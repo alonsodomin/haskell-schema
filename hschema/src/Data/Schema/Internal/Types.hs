@@ -5,10 +5,10 @@
 {-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE TypeOperators             #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
 
 module Data.Schema.Internal.Types where
 

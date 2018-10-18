@@ -16,12 +16,12 @@ import           Data.Schema.Internal.Types
 import           Data.Schema.JSON.Internal.Serializer
 import           Data.Schema.PrettyPrint
 import           Data.Scientific
-import Data.Vector (Vector)
-import qualified Data.Vector as Vector
 import           Data.Text                            (Text)
 import qualified Data.Text                            as T
 import           Data.Text.Prettyprint.Doc            ((<+>))
 import qualified Data.Text.Prettyprint.Doc            as PP
+import           Data.Vector                          (Vector)
+import qualified Data.Vector                          as Vector
 import qualified Test.QuickCheck                      as QC
 import qualified Test.QuickCheck.Gen                  as QC
 import           Test.QuickCheck.Instances.Scientific ()

@@ -12,9 +12,9 @@ import           Data.Schema
 import           Data.Schema.Internal.Types
 import           Data.Schema.JSON.Internal.Types
 import           Data.Scientific
-import Data.Vector (Vector)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
+import           Data.Vector                     (Vector)
 
 -- | Define a text primitive
 text :: JsonSchema Text
@@ -38,6 +38,9 @@ real = alias (iso (\x -> either id fromIntegral $ floatingOrInteger x) fromFloat
 
 array :: JsonSchema a -> JsonSchema (Vector a)
 array elemSchema = prim $ HMutu (JsonArray elemSchema)
+
+list :: JsonSchema a -> JsonSchema [a]
+list = toList . array
 
 hash :: JsonSchema a -> JsonSchema (HashMap Text a)
 hash elemSchema = prim $ HMutu (JsonMap elemSchema)
