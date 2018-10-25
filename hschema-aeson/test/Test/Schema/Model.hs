@@ -24,6 +24,12 @@ data UserRole = UserRole'
 data AdminRole = AdminRole' { department :: String, subordinateCount :: Int }
   deriving (Eq, Show)
 
+mkUserRole :: Role
+mkUserRole = UserRole $ UserRole'
+
+mkAdminRole :: String -> Int -> Role
+mkAdminRole dpt subs = AdminRole $ AdminRole' dpt subs
+
 _UserRole :: Prism' Role UserRole
 _UserRole = prism' UserRole $ \case
     UserRole x -> Just x

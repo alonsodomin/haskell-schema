@@ -54,5 +54,8 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - bytestring
+    - directory
     - hschema
     - hschema-aeson
+    - hspec
