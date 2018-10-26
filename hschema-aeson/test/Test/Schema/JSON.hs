@@ -17,6 +17,12 @@ samplePerson = Person "foo" (Just 12) [
   , mkAdminRole "bar" 4
   ]
 
+samplePersonJSONFileName :: String
+samplePersonJSONFileName = "expected-model.json"
+
+samplePersonJSON :: IO String
+samplePersonJSON = loadTestFile samplePersonJSONFileName
+
 prop_reverse :: Person -> Bool
 prop_reverse person = decode (encode person) == (Just person)
 
@@ -24,8 +30,13 @@ describeJsonSerialization :: IO ()
 describeJsonSerialization = hspec $ do
   describe "toJsonSerializer" $ do
     it "should generate valid JSON" $ do
-      expectedJSON <- loadTestFile "expected-model.json"
+      expectedJSON <- samplePersonJSON
       (T.unpack $ encodeToLazyText samplePerson) `shouldBe` expectedJSON
+
+    it "should parse the given JSON" $ do
+      givenJSON     <- samplePersonJSON
+      decodedPerson <- decodeFileStrict =<< testFilePath samplePersonJSONFileName
+      decodedPerson `shouldBe` (Just samplePerson)
 
 verifyJsonSchema :: IO ()
 verifyJsonSchema = do

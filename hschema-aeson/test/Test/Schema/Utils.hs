@@ -8,7 +8,10 @@ getTestFolder = do
   baseDir <- getCurrentDirectory
   return $ baseDir ++ "/test/"
 
-loadTestFile :: String -> IO String
-loadTestFile f = do
+testFilePath :: String -> IO String
+testFilePath f = do
   testDir <- getTestFolder
-  readFile $ testDir ++ f
+  return $ testDir ++ f
+
+loadTestFile :: String -> IO String
+loadTestFile f = testFilePath f >>= readFile
