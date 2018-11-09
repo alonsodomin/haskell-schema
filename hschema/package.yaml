@@ -1,5 +1,5 @@
 name:                hschema
-version:             0.0.1.0
+version:             0.0.1.1
 category:            Data,Schema
 github:              "alonsodomin/haskell-schema"
 license:             LGPL-3
