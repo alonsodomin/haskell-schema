@@ -1,6 +1,7 @@
 # Haskell Schema
 
 [![Build Status](https://travis-ci.org/alonsodomin/haskell-schema.svg?branch=master)](https://travis-ci.org/alonsodomin/haskell-schema)
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 
 Haskell Schema (or `hschema`) is a library with the purpose of describing data (or domains) and use that information to automatically
   derive serialization codecs (JSON, binary, etc.), arbitrary generators, pretty printers and much more. It is heavily inspired by
