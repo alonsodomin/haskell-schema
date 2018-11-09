@@ -48,6 +48,7 @@ Let's start by defining a some data types alongside some lenses:
 {-# LANGUAGE TypeFamilies      #-}
 
 import Control.Lens
+import Data.Time (UTCTime)
 
 data Role =
     UserRole UserRole
@@ -70,7 +71,7 @@ _AdminRole = prism' AdminRole $ \case
     AdminRole x -> Just x
     _           -> Nothing
 
-data Person = Person { personName :: String, birthDate :: Maybe Int, roles :: [Role] }
+data Person = Person { personName :: String, birthDate :: Maybe UTCTime, roles :: [Role] }
   deriving (Eq, Show)
 ```
 
@@ -78,15 +79,19 @@ Now, defining the schema for the `Person` data type, you define each of the fiel
   an applicative:
 
 ```haskell
+import           Data.Convertible
 import qualified Data.Schema             as S
 import           Data.Schema.JSON
 import qualified Data.Schema.JSON.Simple as JSON
+
+utcTimeSchema :: JsonSchema UTCTime
+utcTimeSchema = S.alias (iso convert convert) (JSON.int :: JsonSchema Integer)
 
 personSchema :: JsonSchema Person
 personSchema = S.record
              ( Person
              <$> S.field    "name"      JSON.string         (to personName)
-             <*> S.optional "birthDate" JSON.int            (to birthDate)
+             <*> S.optional "birthDate" utcTimeSchema       (to birthDate)
              <*> S.field    "roles"     (S.list roleSchema) (to roles)
              )
 ```
