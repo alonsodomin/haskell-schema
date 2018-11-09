@@ -7,7 +7,7 @@ if [[ ! -z "$TRAVIS_TAG" ]] && [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
   mkdir -p "$HOME/.stack/upload"
   echo "{ \"username\": \"$HACKAGE_USERNAME\", \"password\": \"$HACKAGE_PASSWORD\" }" > "$HOME/.stack/upload/credentials.json"
   stack sdist
-  stack upload
+  stack upload .
 else
   echo "Skipping Hackage release because this is not a tagged build."
 fi
