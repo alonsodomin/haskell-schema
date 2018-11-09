@@ -13,7 +13,7 @@ extra-source-files:
 - ChangeLog.md
 
 # Metadata used when publishing your package
-synopsis:            Describing Haskell data types as schemas and obtain free generators, JSON codecs, pretty printers, etc.
+synopsis:            Describe schemas for your Haskell data types.
 
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
