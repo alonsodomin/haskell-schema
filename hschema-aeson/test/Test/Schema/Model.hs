@@ -6,12 +6,17 @@ module Test.Schema.Model where
 
 import           Control.Lens
 import           Data.Aeson
+import           Data.Convertible
 import           Data.Schema             (HasSchema (..))
 import qualified Data.Schema             as S
 import           Data.Schema.JSON
 import qualified Data.Schema.JSON.Simple as JSON
+import           Data.Time               (UTCTime)
 import           Test.QuickCheck
 import           Test.Schema.QuickCheck
+
+utcTimeSchema :: JsonSchema UTCTime
+utcTimeSchema = S.alias (iso convert convert) (JSON.int :: JsonSchema Integer)
 
 data Role =
     UserRole UserRole
@@ -53,14 +58,14 @@ roleSchema = S.oneOf
            , S.alt "admin" adminRole           _AdminRole
            ]
 
-data Person = Person { personName :: String, birthDate :: Maybe Int, roles :: [Role] }
+data Person = Person { personName :: String, birthDate :: Maybe UTCTime, roles :: [Role] }
   deriving (Eq, Show)
 
 personSchema :: JsonSchema Person
 personSchema = S.record
              ( Person
              <$> S.field    "name"      JSON.string            (to personName)
-             <*> S.optional "birthDate" JSON.int               (to birthDate)
+             <*> S.optional "birthDate" utcTimeSchema          (to birthDate)
              <*> S.field    "roles"     (JSON.list roleSchema) (to roles)
              )
 

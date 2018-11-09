@@ -55,6 +55,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - bytestring
+    - convertible
     - directory
     - hschema
     - hschema-aeson

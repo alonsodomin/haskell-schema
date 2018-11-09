@@ -4,6 +4,7 @@ module Test.Schema.JSON
 
 import           Data.Aeson
 import           Data.Aeson.Text
+import           Data.Convertible
 import           Data.Schema.JSON
 import qualified Data.Text.Lazy    as T
 import           Test.Hspec
@@ -12,7 +13,7 @@ import           Test.Schema.Model
 import           Test.Schema.Utils
 
 samplePerson :: Person
-samplePerson = Person "foo" (Just 12) [
+samplePerson = Person "foo" (Just $ convert (12 :: Int)) [
     mkUserRole
   , mkAdminRole "bar" 4
   ]
