@@ -1,5 +1,5 @@
 name:                hschema-aeson
-version:             0.0.1.1
+version:             0.0.1.0
 category:            Data,Schema,JSON
 github:              "alonsodomin/haskell-schema"
 license:             LGPL-3
@@ -11,6 +11,7 @@ copyright:           "2018 Antonio Alonso Dominguez"
 extra-source-files:
 - README.md
 - ChangeLog.md
+- test/*.json
 
 # Metadata used when publishing your package
 synopsis:            Describe schemas for your Haskell data types.
@@ -46,7 +47,7 @@ library:
   source-dirs: src
 
 tests:
-  hschema-test:
+  hschema-aeson-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:

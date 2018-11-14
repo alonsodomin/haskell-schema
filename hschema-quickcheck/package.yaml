@@ -1,5 +1,5 @@
 name:                hschema-quickcheck
-version:             0.0.1.1
+version:             0.0.1.0
 category:            Data,Schema,Testing
 github:              "alonsodomin/haskell-schema"
 license:             LGPL-3
