@@ -8,7 +8,6 @@
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE TypeOperators             #-}
-{-# LANGUAGE TypeSynonymInstances      #-}
 
 module Data.Schema.Internal.Types where
 
@@ -61,8 +60,8 @@ instance Profunctor (Field s) where
   lmap f (Field ap) = Field $ hoistAp (contraNT f) ap
     where contraNT :: (n -> o) -> FieldDef o s ~> FieldDef n s
           contraNT f = \case
-            RequiredField n s g -> RequiredField n s ((to f) . g)
-            OptionalField n s g -> OptionalField n s ((to f) . g)
+            RequiredField n s g -> RequiredField n s (to f . g)
+            OptionalField n s g -> OptionalField n s (to f . g)
   rmap = fmap
 
 -- | Define a required field
@@ -101,9 +100,9 @@ instance HFunctor (SchemaF p) where
 newtype Schema p a = Schema { unwrapSchema :: HFix (SchemaF p) a }
 
 instance Invariant (Schema p) where
-  invmap f g sch = case (unfix . unwrapSchema $ sch) of
-    AliasSchema base iso -> Schema . HFix $ AliasSchema base (iso . (Lens.iso f g))
-    otherwise            -> Schema . HFix $ AliasSchema (unwrapSchema sch) (Lens.iso f g)
+  invmap f g sch = case unfix . unwrapSchema $ sch of
+    AliasSchema base iso -> Schema . HFix $ AliasSchema base (iso . Lens.iso f g)
+    _                    -> Schema . HFix $ AliasSchema (unwrapSchema sch) (Lens.iso f g)
 
 -- | An Schema has a HFunctor that performs a natural transformation of the primitive algebra of the Schema
 instance HFunctor Schema where

@@ -135,7 +135,7 @@ There is also built-in support for pretty printing schemas:
 ```haskell
 import Data.Schema.PrettyPrint
 
-putSchema personSchema
+putSchema' personSchema
 ```
 
 That will produce an output similar to the following:
@@ -156,7 +156,7 @@ Not happy with that? What about a pretty printer based on the given schema? Just
 
 ```haskell
 pprintPerson :: Person -> IO ()
-pprintPerson = prettyPrinter personSchema
+pprintPerson = prettyPrinter' personSchema
 ```
 
 ## Credits

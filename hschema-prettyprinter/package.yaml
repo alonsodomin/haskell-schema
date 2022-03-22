@@ -28,7 +28,7 @@ dependencies:
 - natural-transformation
 - lens
 - free
-- prettyprinter
+- prettyprinter >= 1.7.0 && < 1.8.0
 - prettyprinter-ansi-terminal
 - text
 - unordered-containers
@@ -36,3 +36,7 @@ dependencies:
 
 library:
   source-dirs: src
+
+exposed-modules:
+- Data.Schema.PrettyPrint.Internal.Algebra
+- Data.Schema.PrettyPrint.Internal.Types

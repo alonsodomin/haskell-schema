@@ -1,9 +1,8 @@
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE KindSignatures       #-}
-{-# LANGUAGE Rank2Types           #-}
-{-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures    #-}
+{-# LANGUAGE Rank2Types        #-}
+{-# LANGUAGE TypeOperators     #-}
 
 module Control.Functor.HigherOrder where
 
@@ -35,7 +34,7 @@ newtype HMutu
   (a :: *) = HMutu { unmutu :: f (g (HMutu f g)) a }
 
 instance HFunctor f => HFunctor (HEnvT f a) where
-  hfmap nt = \fa -> HEnvT (hask fa) ((hfmap nt) (hlocal fa))
+  hfmap nt = \fa -> HEnvT (hask fa) (hfmap nt (hlocal fa))
 
 instance Functor (f g) => Functor (HEnvT f e g) where
   fmap f env = HEnvT (hask env) (fmap f (hlocal env))
@@ -48,11 +47,11 @@ hcofree :: a -> f (HCofree f a) b -> HCofree f a b
 hcofree a fhc = HFix (HEnvT a fhc)
 
 cataNT :: HFunctor f => HAlgebra f g -> HFix f ~> g
-cataNT alg = (unwrapNT alg) . nt
-  where nt hf = (hfmap (cataNT alg)) (unfix hf)
+cataNT alg = unwrapNT alg . nt
+  where nt hf = hfmap (cataNT alg) (unfix hf)
 
 anaNT :: HFunctor f => HCoalgebra f g -> g ~> HFix f
-anaNT coalg g = HFix $ (hfmap (anaNT coalg)) $ (unwrapNT coalg) g
+anaNT coalg g = HFix $ hfmap (anaNT coalg) $ unwrapNT coalg g
 
 --hyloNT :: HFunctor f => HAlgebra f g -> HCoalgebra g f -> HFix f ~> HFix g
 

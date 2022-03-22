@@ -1,1 +1,1 @@
-{"roles":[{"user":{}},{"admin":{"department":"bar","subordinateCount":4}}],"name":"foo","birthDate":12}
+{"roles":[{"user":{}},{"admin":{"subordinateCount":4,"department":"bar"}}],"name":"foo","birthDate":12}

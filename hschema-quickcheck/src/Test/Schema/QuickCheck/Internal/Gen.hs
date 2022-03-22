@@ -3,7 +3,6 @@
 {-# LANGUAGE GADTs                #-}
 {-# LANGUAGE LambdaCase           #-}
 {-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Test.Schema.QuickCheck.Internal.Gen
@@ -25,7 +24,7 @@ import           Test.QuickCheck             (Gen)
 import qualified Test.QuickCheck             as Gen
 
 optGen :: Gen a -> Gen (Maybe a)
-optGen base = Gen.frequency [(1, return Nothing), (3, liftM Just base)]
+optGen base = Gen.frequency [(1, return Nothing), (3, fmap Just base)]
 
 class ToGen a where
   toGen :: a ~> Gen
@@ -43,8 +42,8 @@ genAlg = wrapNT $ \case
           genField (OptionalField _ g _) = optGen g
   UnionSchema alts          -> Gen.oneof . NEL.toList $ fmap genAlt alts
     where genAlt :: AltDef Gen a -> Gen a
-          genAlt (AltDef _ genSingle pr) = (view $ re pr) <$> genSingle
+          genAlt (AltDef _ genSingle pr) = view (re pr) <$> genSingle
   AliasSchema base iso      -> view iso <$> base
 
 instance ToGen s => ToGen (Schema s) where
-  toGen schema = (cataNT genAlg) (unwrapSchema schema)
+  toGen schema = cataNT genAlg (unwrapSchema schema)

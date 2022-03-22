@@ -54,8 +54,8 @@ toList = invmap Vector.toList Vector.fromList
 
 -- | Define the schema of an union (coproduct) type based on the given alternatives
 oneOf :: [AltDef (Schema p) a] -> Schema p a
-oneOf alts = Schema (HFix (UnionSchema $ fmap (hfmap unwrapSchema) $ NEL.fromList alts))
+oneOf alts = Schema (HFix (UnionSchema $ hfmap unwrapSchema <$> NEL.fromList alts))
 
 -- | Define an schema alias that is isomorphic to another one using the given ISO transformation
 alias :: Iso' a b -> Schema p a -> Schema p b
-alias i base = invmap (view i) (view . from $ i) base
+alias i = invmap (view i) (view . from $ i)
