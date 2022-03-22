@@ -30,6 +30,7 @@ data FieldDef o s a where
   RequiredField :: Text -> s a -> Getter o a -> FieldDef o s a
   OptionalField :: Text -> s a -> Getter o (Maybe a) -> FieldDef o s (Maybe a)
 
+-- | Read the field name from a field definition
 fieldName :: FieldDef o s a -> Text
 fieldName (RequiredField name _ _) = name
 fieldName (OptionalField name _ _) = name
@@ -42,6 +43,7 @@ instance HFunctor (FieldDef o) where
 -- | The type of a field of type `a`, belonging to the data type `o` and based on schema `s`
 newtype Field s o a = Field { unwrapField :: Ap (FieldDef o s) a }
 
+-- | Applies a Natural Transformation to the schema of a Field
 hoistField :: (m ~> n) -> Field m o a -> Field n o a
 hoistField nt (Field ap) = Field $ hoistAp (hfmap nt) ap
 
@@ -63,10 +65,11 @@ instance Profunctor (Field s) where
             OptionalField n s g -> OptionalField n s ((to f) . g)
   rmap = fmap
 
--- | Define a field
+-- | Define a required field
 field :: Text -> s a -> Getter o a -> Field s o a
 field name schema getter = Field $ liftAp (RequiredField name schema getter)
 
+-- | Define an optional field
 optional :: Text -> s a -> Getter o (Maybe a) -> Field s o (Maybe a)
 optional name schema getter = Field $ liftAp (OptionalField name schema getter)
 

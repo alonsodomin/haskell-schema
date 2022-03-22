@@ -20,8 +20,8 @@ module Data.Schema
 import           Control.Functor.HigherOrder
 import           Control.Lens
 import           Data.Functor.Invariant
-import           Data.Hashable               (Hashable)
 import           Data.HashMap.Strict         (HashMap)
+import           Data.Hashable               (Hashable)
 import qualified Data.List.NonEmpty          as NEL
 import           Data.Schema.Internal.Types
 import           Data.Text                   (Text)
